@@ -1,13 +1,13 @@
+import { Link } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
   Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Link } from 'expo-router';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -26,11 +26,27 @@ export default function WelcomeScreen() {
 
       {/* Text Block */}
       <View style={styles.textContainer}>
-        <Text style={styles.title}>Grow Up The Business</Text>
+        <Text style={styles.title}>Grow Your Business</Text>
         <Text style={styles.description}>
-          BizSaathi - Your Trusted Partner for Smart Sales & Growth.{"\n"}
-          Track your transactions, manage inventory, and build your credit profile — all from your phone.
+          BizSaathi - Your Personal Business Assistant.{"\n"}
+          Manage inventory, track transactions, build credit score, and get smart insights — all from your phone.
         </Text>
+      </View>
+
+      {/* Features */}
+      <View style={styles.featuresContainer}>
+        <View style={styles.featureItem}>
+          <Text style={styles.featureIcon}>📊</Text>
+          <Text style={styles.featureText}>Credit Score Analysis</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Text style={styles.featureIcon}>📦</Text>
+          <Text style={styles.featureText}>Inventory Management</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Text style={styles.featureIcon}>📱</Text>
+          <Text style={styles.featureText}>Smart Predictions</Text>
+        </View>
       </View>
 
       {/* Get Started Button */}
@@ -67,7 +83,7 @@ const styles = StyleSheet.create({
   },
   illustration: {
     width: '90%',
-    height: 240,
+    height: 200,
     marginTop: 20,
   },
   textContainer: {
@@ -75,16 +91,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 16,
   },
   description: {
     textAlign: 'center',
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 24,
     color: '#555',
+  },
+  featuresContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  featureItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  featureIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  featureText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   buttonContainer: {
     width: screenWidth,
@@ -93,7 +129,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingVertical: 30,
-    marginTop: 30,
+    marginTop: 20,
   },
   getStartedButton: {
     backgroundColor: '#FFAA33',

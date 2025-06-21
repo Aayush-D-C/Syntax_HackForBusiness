@@ -1,156 +1,491 @@
-import { Text, View, StyleSheet, SectionList } from "react-native";
-import { MaterialIcons } from '@expo/vector-icons';
+// app/(tabs)/stocks.tsx
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { useData } from '../../context/DataContext';
 
-type Product = {
+interface InventoryItem {
   id: string;
   name: string;
   category: string;
-  currentStock: number;
-  lowStockThreshold: number;
+  quantity: number;
   price: number;
-  lastUpdated: string;
+  low_stock_threshold: number;
+  last_updated: string;
+}
+
+interface InventoryCardProps {
+  item: InventoryItem;
+  onPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const getStockStatusColor = (quantity: number, threshold: number): string => {
+  if (quantity === 0) return '#F44336';
+  if (quantity <= threshold) return '#FF9800';
+  return '#4CAF50';
 };
 
-const Stocks = () => {
-  const inventory: Product[] = [
-    {
-      id: "1",
-      name: "iPhone 15 Pro",
-      category: "Smartphones",
-      currentStock: 15,
-      lowStockThreshold: 5,
-      price: 999,
-      lastUpdated: "2023-10-15",
-    },
-    {
-      id: "2",
-      name: "MacBook Air M2",
-      category: "Laptops",
-      currentStock: 8,
-      lowStockThreshold: 3,
-      price: 1199,
-      lastUpdated: "2023-10-14",
-    },
-    {
-      id: "3",
-      name: "AirPods Pro (2nd Gen)",
-      category: "Audio",
-      currentStock: 2,
-      lowStockThreshold: 4,
-      price: 249,
-      lastUpdated: "2023-10-16",
-    },
-    {
-      id: "4",
-      name: "iPad Pro 12.9\"",
-      category: "Tablets",
-      currentStock: 6,
-      lowStockThreshold: 2,
-      price: 1099,
-      lastUpdated: "2023-10-13",
-    },
-    {
-      id: "5",
-      name: "Apple Watch Series 9",
-      category: "Wearables",
-      currentStock: 12,
-      lowStockThreshold: 5,
-      price: 399,
-      lastUpdated: "2023-10-15",
-    },
-    {
-      id: "6",
-      name: "Magic Keyboard",
-      category: "Accessories",
-      currentStock: 1,
-      lowStockThreshold: 3,
-      price: 299,
-      lastUpdated: "2023-10-16",
-    },
-  ];
+const InventoryCard: React.FC<InventoryCardProps> = ({
+  item,
+  onPress,
+  onEdit,
+  onDelete,
+}) => {
+  const stockStatusColor = getStockStatusColor(item.quantity, item.low_stock_threshold);
+  const stockStatus = item.quantity === 0 ? 'Out of Stock' : 
+                     item.quantity <= item.low_stock_threshold ? 'Low Stock' : 'In Stock';
 
-  const groupedProducts = inventory.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    acc[product.category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
-
-  const sectionData = Object.keys(groupedProducts).map((category) => ({
-    title: category,
-    data: groupedProducts[category],
-  }));
-
-  const renderProductItem = ({ item }: { item: Product }) => (
-    <View style={[
-      styles.productItem,
-      item.currentStock === 0 ? styles.outOfStockItem : 
-      item.currentStock <= item.lowStockThreshold ? styles.lowStockItem : null
-    ]}>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <View style={styles.stockInfo}>
-          <MaterialIcons 
-            name={item.currentStock === 0 ? "error-outline" : 
-                  item.currentStock <= item.lowStockThreshold ? "warning" : "check-circle"} 
-            size={18} 
-            color={item.currentStock === 0 ? "#f44336" : 
-                   item.currentStock <= item.lowStockThreshold ? "#ff9800" : "#4caf50"} 
-          />
-          <Text style={styles.stockText}>
-            Stock: {item.currentStock} {item.currentStock <= item.lowStockThreshold && 
-              `(Low stock, threshold: ${item.lowStockThreshold})`}
-            {item.currentStock === 0 && " (Out of stock)"}
+  return (
+    <TouchableOpacity style={styles.inventoryCard} onPress={onPress}>
+      <View style={styles.cardHeader}>
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemCategory}>{item.category}</Text>
+        </View>
+        <View style={styles.stockStatus}>
+          <View style={[styles.statusDot, { backgroundColor: stockStatusColor }]} />
+          <Text style={[styles.statusText, { color: stockStatusColor }]}>
+            {stockStatus}
           </Text>
         </View>
-        <Text style={styles.lastUpdated}>Last updated: {item.lastUpdated}</Text>
       </View>
-      <View style={styles.priceContainer}>
-        <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-        <Text style={styles.totalValue}>Total: ${(item.price * item.currentStock).toFixed(2)}</Text>
+      
+      <View style={styles.cardDetails}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Quantity:</Text>
+          <Text style={styles.detailValue}>{item.quantity}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Price:</Text>
+          <Text style={styles.detailValue}>NPR {item.price.toLocaleString()}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Value:</Text>
+          <Text style={styles.detailValue}>NPR {(item.quantity * item.price).toLocaleString()}</Text>
+        </View>
       </View>
-    </View>
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
+          <Ionicons name="pencil" size={16} color="#007AFF" />
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
+          <Ionicons name="trash" size={16} color="#F44336" />
+          <Text style={[styles.actionText, { color: '#F44336' }]}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const InventoryScreen: React.FC = () => {
+  const router = useRouter();
+  const { currentShopkeeper, loading, error, clearError } = useData();
+  
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterBy, setFilterBy] = useState<'all' | 'low' | 'out' | 'in'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'quantity' | 'value'>('name');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newItem, setNewItem] = useState({
+    name: '',
+    category: '',
+    quantity: '',
+    price: '',
+    threshold: '',
+  });
+
+  // Mock inventory data - in real app, this would come from API
+  const [inventory, setInventory] = useState<InventoryItem[]>([
+    {
+      id: '1',
+      name: 'Rice',
+      category: 'Grains',
+      quantity: 50,
+      price: 120,
+      low_stock_threshold: 10,
+      last_updated: '2024-01-15',
+    },
+    {
+      id: '2',
+      name: 'Cooking Oil',
+      category: 'Oils',
+      quantity: 5,
+      price: 250,
+      low_stock_threshold: 8,
+      last_updated: '2024-01-14',
+    },
+    {
+      id: '3',
+      name: 'Sugar',
+      category: 'Sweeteners',
+      quantity: 0,
+      price: 180,
+      low_stock_threshold: 5,
+      last_updated: '2024-01-13',
+    },
+  ]);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error, [{ text: 'OK', onPress: clearError }]);
+    }
+  }, [error, clearError]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // In real app, fetch inventory data here
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const filteredAndSortedInventory = React.useMemo(() => {
+    let filtered = inventory.filter(item =>
+      item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchText.toLowerCase())
+    );
+
+    // Apply stock filter
+    if (filterBy !== 'all') {
+      filtered = filtered.filter(item => {
+        switch (filterBy) {
+          case 'low':
+            return item.quantity > 0 && item.quantity <= item.low_stock_threshold;
+          case 'out':
+            return item.quantity === 0;
+          case 'in':
+            return item.quantity > item.low_stock_threshold;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'quantity':
+          return b.quantity - a.quantity;
+        case 'value':
+          return (b.quantity * b.price) - (a.quantity * a.price);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [inventory, searchText, filterBy, sortBy]);
+
+  const handleAddItem = () => {
+    if (!newItem.name || !newItem.category || !newItem.quantity || !newItem.price) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const item: InventoryItem = {
+      id: Date.now().toString(),
+      name: newItem.name,
+      category: newItem.category,
+      quantity: parseInt(newItem.quantity),
+      price: parseFloat(newItem.price),
+      low_stock_threshold: parseInt(newItem.threshold) || 5,
+      last_updated: new Date().toISOString().split('T')[0],
+    };
+
+    setInventory([...inventory, item]);
+    setNewItem({ name: '', category: '', quantity: '', price: '', threshold: '' });
+    setShowAddModal(false);
+    Alert.alert('Success', 'Item added successfully');
+  };
+
+  const handleEditItem = (item: InventoryItem) => {
+    // In real app, navigate to edit screen or show edit modal
+    Alert.alert('Edit Item', `Edit functionality for ${item.name} would be implemented here`);
+  };
+
+  const handleDeleteItem = (item: InventoryItem) => {
+    Alert.alert(
+      'Delete Item',
+      `Are you sure you want to delete ${item.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setInventory(inventory.filter(i => i.id !== item.id));
+            Alert.alert('Success', 'Item deleted successfully');
+          },
+        },
+      ]
+    );
+  };
+
+  const FilterModal = () => (
+    <Modal
+      visible={showFilters}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setShowFilters(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Filters & Sorting</Text>
+          
+          <Text style={styles.filterSectionTitle}>Filter by Stock Status</Text>
+          <View style={styles.filterOptions}>
+            {[
+              { key: 'all', label: 'All Items' },
+              { key: 'in', label: 'In Stock' },
+              { key: 'low', label: 'Low Stock' },
+              { key: 'out', label: 'Out of Stock' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.filterOption,
+                  filterBy === option.key && styles.filterOptionActive,
+                ]}
+                onPress={() => setFilterBy(option.key as any)}
+              >
+                <Text
+                  style={[
+                    styles.filterOptionText,
+                    filterBy === option.key && styles.filterOptionTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.filterSectionTitle}>Sort by</Text>
+          <View style={styles.filterOptions}>
+            {[
+              { key: 'name', label: 'Name' },
+              { key: 'quantity', label: 'Quantity' },
+              { key: 'value', label: 'Value' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.filterOption,
+                  sortBy === option.key && styles.filterOptionActive,
+                ]}
+                onPress={() => setSortBy(option.key as any)}
+              >
+                <Text
+                  style={[
+                    styles.filterOptionText,
+                    sortBy === option.key && styles.filterOptionTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={styles.closeModalButton}
+            onPress={() => setShowFilters(false)}
+          >
+            <Text style={styles.closeModalText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 
-  const totalItems = inventory.length;
-  const totalValue = inventory.reduce((sum, item) => sum + (item.price * item.currentStock), 0);
-  const lowStockItems = inventory.filter(item => item.currentStock <= item.lowStockThreshold && item.currentStock > 0).length;
-  const outOfStockItems = inventory.filter(item => item.currentStock === 0).length;
+  const AddItemModal = () => (
+    <Modal
+      visible={showAddModal}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setShowAddModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Add New Item</Text>
+          
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Item Name"
+            value={newItem.name}
+            onChangeText={(text) => setNewItem({ ...newItem, name: text })}
+          />
+          
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Category"
+            value={newItem.category}
+            onChangeText={(text) => setNewItem({ ...newItem, category: text })}
+          />
+          
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Quantity"
+            value={newItem.quantity}
+            onChangeText={(text) => setNewItem({ ...newItem, quantity: text })}
+            keyboardType="numeric"
+          />
+          
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Price (NPR)"
+            value={newItem.price}
+            onChangeText={(text) => setNewItem({ ...newItem, price: text })}
+            keyboardType="numeric"
+          />
+          
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Low Stock Threshold"
+            value={newItem.threshold}
+            onChangeText={(text) => setNewItem({ ...newItem, threshold: text })}
+            keyboardType="numeric"
+          />
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => setShowAddModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.saveButton]}
+              onPress={handleAddItem}
+            >
+              <Text style={styles.saveButtonText}>Add Item</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  if (loading && inventory.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading inventory...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
+        <Text style={styles.headerTitle}>My Inventory</Text>
+        <Text style={styles.headerSubtitle}>
+          {filteredAndSortedInventory.length} items
+        </Text>
+      </LinearGradient>
+
+      {/* Search and Filter */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Ionicons name="search" size={20} color="#999" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search inventory..."
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setShowFilters(true)}
+        >
+          <Ionicons name="filter" size={20} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Add Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setShowAddModal(true)}
+      >
+        <Ionicons name="add" size={24} color="#fff" />
+        <Text style={styles.addButtonText}>Add Item</Text>
+      </TouchableOpacity>
+
+      {/* Inventory Summary */}
       <View style={styles.summaryContainer}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Total Products</Text>
-          <Text style={styles.summaryValue}>{totalItems}</Text>
+          <Text style={styles.summaryTitle}>Total Items</Text>
+          <Text style={styles.summaryValue}>{inventory.length}</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Inventory Value</Text>
-          <Text style={styles.summaryValue}>${totalValue.toFixed(2)}</Text>
-        </View>
-        <View style={[styles.summaryCard, styles.warningCard]}>
           <Text style={styles.summaryTitle}>Low Stock</Text>
-          <Text style={styles.summaryValue}>{lowStockItems}</Text>
+          <Text style={styles.summaryValue}>
+            {inventory.filter(item => item.quantity > 0 && item.quantity <= item.low_stock_threshold).length}
+          </Text>
         </View>
-        <View style={[styles.summaryCard, styles.dangerCard]}>
+        <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Out of Stock</Text>
-          <Text style={styles.summaryValue}>{outOfStockItems}</Text>
+          <Text style={styles.summaryValue}>
+            {inventory.filter(item => item.quantity === 0).length}
+          </Text>
         </View>
       </View>
 
-      <SectionList
-        sections={sectionData}
+      {/* Inventory List */}
+      <FlatList
+        data={filteredAndSortedInventory}
         keyExtractor={(item) => item.id}
-        renderItem={renderProductItem}
-        renderSectionHeader={({ section: { title } }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>{title}</Text>
-          </View>
+        renderItem={({ item }) => (
+          <InventoryCard
+            item={item}
+            onPress={() => handleEditItem(item)}
+            onEdit={() => handleEditItem(item)}
+            onDelete={() => handleDeleteItem(item)}
+          />
         )}
-        contentContainerStyle={styles.listContent}
-        stickySectionHeadersEnabled={true}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="cube-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>No items found</Text>
+            <Text style={styles.emptySubtext}>
+              {searchText || filterBy !== 'all'
+                ? 'Try adjusting your search or filters'
+                : 'Add your first inventory item to get started'}
+            </Text>
+          </View>
+        }
       />
+
+      <FilterModal />
+      <AddItemModal />
     </View>
   );
 };
@@ -158,114 +493,313 @@ const Stocks = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
-  summaryContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    padding: 10,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
   },
-  summaryCard: {
-    width: "48%",
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-  warningCard: {
-    backgroundColor: "#fff3e0",
-  },
-  dangerCard: {
-    backgroundColor: "#ffebee",
-  },
-  summaryTitle: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  sectionHeader: {
-    backgroundColor: "#fff",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  sectionHeaderText: {
-    fontWeight: "600",
-    color: "#555",
+  loadingText: {
+    marginTop: 16,
     fontSize: 16,
+    color: '#666',
   },
-  productItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
+  header: {
+    padding: 20,
+    paddingTop: 50,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.8,
+    marginTop: 5,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    padding: 20,
+    alignItems: 'center',
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  filterButton: {
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 25,
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  lowStockItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#ff9800",
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    marginHorizontal: 20,
+    padding: 15,
+    borderRadius: 25,
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  outOfStockItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#f44336",
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
-  productInfo: {
+  summaryContainer: {
+    flexDirection: 'row',
+    padding: 20,
+    paddingTop: 10,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 15,
+    marginHorizontal: 5,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  summaryTitle: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 5,
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  listContainer: {
+    padding: 20,
+    paddingTop: 10,
+  },
+  inventoryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  itemInfo: {
     flex: 1,
   },
-  productName: {
-    fontWeight: "bold",
+  itemName: {
     fontSize: 16,
-    marginBottom: 4,
+    fontWeight: '600',
+    color: '#333',
   },
-  stockInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  stockText: {
-    color: "#666",
+  itemCategory: {
     fontSize: 14,
-    marginLeft: 5,
+    color: '#666',
+    marginTop: 2,
   },
-  lastUpdated: {
-    color: "#999",
+  stockStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  statusText: {
     fontSize: 12,
+    fontWeight: '500',
   },
-  priceContainer: {
-    alignItems: "flex-end",
-    marginLeft: 10,
+  cardDetails: {
+    marginBottom: 10,
   },
-  price: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 4,
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
   },
-  totalValue: {
-    color: "#666",
+  detailLabel: {
     fontSize: 14,
+    color: '#666',
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 10,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 15,
+  },
+  actionText: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginLeft: 4,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 10,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  filterOption: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  filterOptionActive: {
+    backgroundColor: '#007AFF',
+  },
+  filterOptionText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  filterOptionTextActive: {
+    color: '#fff',
+  },
+  closeModalButton: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeModalText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
-export default Stocks;
+export default InventoryScreen;

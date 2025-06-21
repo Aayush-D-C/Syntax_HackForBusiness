@@ -1,16 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { usePathname, useRouter, Slot } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { PaperProvider } from 'react-native-paper';
+import { Slot, usePathname, useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const TABS = [
-  { name: 'home', label: 'Home', icon: 'home' },
-  { name: 'history', label: 'History', icon: 'history' },
+  { name: 'home', label: 'Dashboard', icon: 'home' },
+  { name: 'stocks', label: 'Inventory', icon: 'cube' },
   { name: 'scanner', label: '', icon: 'barcode-scan', center: true },
-  { name: 'stocks', label: 'Stocks', icon: 'chart-line' },
-  { name: 'predict', label: 'Predict', icon: 'lightbulb-on-outline' },
+  { name: 'predict', label: 'Credit Score', icon: 'chart-line' },
+  { name: 'history', label: 'History', icon: 'clock' },
 ];
 
 export default function TabsLayout() {
@@ -18,54 +16,50 @@ export default function TabsLayout() {
   const router = useRouter();
 
   return (
-    <SafeAreaProvider>
-      <PaperProvider>
-        <View style={{ flex: 1 }}>
-          <Slot />
+    <View style={{ flex: 1 }}>
+      <Slot />
 
-          {/* Bottom Navigation Bar */}
-          <View style={styles.tabContainer}>
-            {TABS.map((tab, index) => {
-              const isFocused = pathname.includes(tab.name);
-              const iconColor = isFocused ? '#6200ee' : '#999';
+      {/* Bottom Navigation Bar */}
+      <View style={styles.tabContainer}>
+        {TABS.map((tab, index) => {
+          const isFocused = pathname.includes(tab.name);
+          const iconColor = isFocused ? '#6200ee' : '#999';
 
-              if (tab.center) {
-                return (
-                  <TouchableOpacity
-                    key={tab.name}
-                    style={styles.centerButton}
-                    onPress={() => router.replace(`/(tabs)/${tab.name}`)}
-                  >
-                    <MaterialCommunityIcons
-                      name={tab.icon}
-                      size={36}
-                      color="white"
-                    />
-                  </TouchableOpacity>
-                );
-              }
+          if (tab.center) {
+            return (
+              <TouchableOpacity
+                key={tab.name}
+                style={styles.centerButton}
+                onPress={() => router.replace(`/(tabs)/${tab.name}` as any)}
+              >
+                <MaterialCommunityIcons
+                  name={tab.icon as any}
+                  size={36}
+                  color="white"
+                />
+              </TouchableOpacity>
+            );
+          }
 
-              return (
-                <TouchableOpacity
-                  key={tab.name}
-                  style={styles.tab}
-                  onPress={() => router.replace(`/(tabs)/${tab.name}`)}
-                >
-                  <MaterialCommunityIcons
-                    name={tab.icon}
-                    size={24}
-                    color={iconColor}
-                  />
-                  <Text style={[styles.label, { color: iconColor }]}>
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      </PaperProvider>
-    </SafeAreaProvider>
+          return (
+            <TouchableOpacity
+              key={tab.name}
+              style={styles.tab}
+              onPress={() => router.replace(`/(tabs)/${tab.name}` as any)}
+            >
+              <MaterialCommunityIcons
+                name={tab.icon as any}
+                size={24}
+                color={iconColor}
+              />
+              <Text style={[styles.label, { color: iconColor }]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 

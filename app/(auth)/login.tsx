@@ -1,8 +1,8 @@
 // app/(auth)/login.tsx
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from "react-native";
-import { useAuth } from "../../context/AuthContext";
 import { Link } from "expo-router";
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -75,7 +75,7 @@ export default function LoginScreen() {
       </View>
 
       <Text style={styles.footerText}>
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/welcome" asChild>
           <Text style={styles.linkText}>Sign up</Text>
         </Link>
