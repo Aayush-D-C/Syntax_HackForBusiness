@@ -1,5 +1,4 @@
-// app/(tabs)/stocks.tsx
-import { Text, View, StyleSheet, FlatList, SectionList } from "react-native";
+import { Text, View, StyleSheet, SectionList } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 
 type Product = {
@@ -13,7 +12,6 @@ type Product = {
 };
 
 const Stocks = () => {
-  // Sample inventory data
   const inventory: Product[] = [
     {
       id: "1",
@@ -71,7 +69,6 @@ const Stocks = () => {
     },
   ];
 
-  // Group products by category
   const groupedProducts = inventory.reduce((acc, product) => {
     if (!acc[product.category]) {
       acc[product.category] = [];
@@ -116,7 +113,6 @@ const Stocks = () => {
     </View>
   );
 
-  // Calculate inventory summary
   const totalItems = inventory.length;
   const totalValue = inventory.reduce((sum, item) => sum + (item.price * item.currentStock), 0);
   const lowStockItems = inventory.filter(item => item.currentStock <= item.lowStockThreshold && item.currentStock > 0).length;

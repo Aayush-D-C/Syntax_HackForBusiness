@@ -1,5 +1,4 @@
-// app/(tabs)/history.tsx
-import { Text, View, StyleSheet, FlatList, SectionList } from "react-native";
+import { Text, View, StyleSheet, SectionList } from "react-native";
 
 type Transaction = {
   id: string;
@@ -11,7 +10,6 @@ type Transaction = {
 };
 
 const History = () => {
-  // Sample transaction data
   const transactions: Transaction[] = [
     {
       id: "1",
@@ -55,7 +53,6 @@ const History = () => {
     },
   ];
 
-  // Group transactions by date
   const groupedTransactions = transactions.reduce((acc, transaction) => {
     if (!acc[transaction.date]) {
       acc[transaction.date] = [];
@@ -123,7 +120,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    },
+  },
   header: {
     fontSize: 24,
     fontWeight: "bold",

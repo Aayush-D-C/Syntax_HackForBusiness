@@ -1,30 +1,45 @@
 // app/(auth)/login.tsx
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { useRouter } from "expo-router";
+import { Link } from "expo-router";
 
 export default function LoginScreen() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const router = useRouter();
 
-  const handleLogin = () => {
-    login();
-    router.replace("/(tabs)/home");
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Please enter both username and password');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await login(username, password);
+    } catch (error: unknown) {
+      let errorMessage = 'Login failed. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* App Logo and Name */}
       <View style={styles.logoContainer}>
         <Image 
-          source={require('../assets/logo.jpg')} // Replace with your actual logo path
+          source={require('../assets/logo.png')}
           style={styles.logo}
         />
-        <Text style={styles.appName}>BizSaathi</Text>
-        <Text style={styles.tagline}>Manage Your Inventory with Ease</Text>
+        <Text style={styles.tagline}>Grow Up Business</Text>
       </View>
 
-      {/* Login Form */}
       <View style={styles.formContainer}>
         <Text style={styles.title}>Welcome Back</Text>
         
@@ -32,6 +47,9 @@ export default function LoginScreen() {
           placeholder="Username" 
           style={styles.input} 
           placeholderTextColor="#999"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
         />
         
         <TextInput 
@@ -39,14 +57,29 @@ export default function LoginScreen() {
           secureTextEntry 
           style={styles.input}
           placeholderTextColor="#999"
+          value={password}
+          onChangeText={setPassword}
         />
         
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.footerText}>Don't have an account? <Text style={styles.linkText}>Sign up</Text></Text>
+      <Text style={styles.footerText}>
+        Don't have an account?{' '}
+        <Link href="/welcome" asChild>
+          <Text style={styles.linkText}>Sign up</Text>
+        </Link>
+      </Text>
     </View>
   );
 }
@@ -63,18 +96,12 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
     marginBottom: 15,
   },
-  appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
   tagline: {
-    fontSize: 14,
+    fontSize: 20,
     color: '#7f8c8d',
   },
   formContainer: {

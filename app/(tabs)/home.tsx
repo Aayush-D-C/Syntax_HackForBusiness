@@ -1,26 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function Home() {
   return (
     <View style={styles.container}>
-      {/* Top Section */}
       <View style={styles.topRow}>
         <View style={styles.creditBox}>
           <Text style={styles.creditText}>Credit Score</Text>
           <Text style={styles.creditValue}>720</Text>
         </View>
         <Image
-          source={require('../assets/logo.jpg')}
+          source={require('../assets/user.png')}
           style={styles.profileIcon}
         />
       </View>
 
-      {/* Dashboard Graph */}
       <View style={styles.chartContainer}>
         <Text style={styles.sectionTitle}>Spending Overview</Text>
         <LineChart
@@ -33,7 +30,7 @@ export default function Home() {
             ],
           }}
           width={screenWidth - 40}
-          height={220}
+          height={400}
           yAxisSuffix=" Rs"
           chartConfig={{
             backgroundGradientFrom: '#fff',
@@ -69,14 +66,14 @@ const styles = StyleSheet.create({
   },
   creditBox: {
     backgroundColor: '#007AFF',
-    padding: 20,
+    padding: 50,
     borderRadius: 12,
     flex: 1,
-    marginRight: 10,
+    marginRight: 100,
   },
   creditText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 27,
   },
   creditValue: {
     color: '#fff',
@@ -85,10 +82,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   profileIcon: {
-    width: 200,
-    height: 200,
-    borderRadius: 35,
-    backgroundColor: '#ccc',
+    width: 100,
+    height: 100,
   },
   chartContainer: {
     marginTop: 40,
