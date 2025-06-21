@@ -16,27 +16,18 @@ import {
   View
 } from 'react-native';
 import { useData } from '../../context/DataContext';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  price: number;
-  low_stock_threshold: number;
-  last_updated: string;
-}
+import { useScan } from '../../context/ScanContext';
 
 interface InventoryCardProps {
-  item: InventoryItem;
+  item: any;
   onPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-const getStockStatusColor = (quantity: number, threshold: number): string => {
+const getStockStatusColor = (quantity: number): string => {
   if (quantity === 0) return '#F44336';
-  if (quantity <= threshold) return '#FF9800';
+  if (quantity <= 10) return '#FF9800';
   return '#4CAF50';
 };
 
@@ -46,9 +37,9 @@ const InventoryCard: React.FC<InventoryCardProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const stockStatusColor = getStockStatusColor(item.quantity, item.low_stock_threshold);
+  const stockStatusColor = getStockStatusColor(item.quantity || 0);
   const stockStatus = item.quantity === 0 ? 'Out of Stock' : 
-                     item.quantity <= item.low_stock_threshold ? 'Low Stock' : 'In Stock';
+                     (item.quantity || 0) <= 10 ? 'Low Stock' : 'In Stock';
 
   return (
     <TouchableOpacity style={styles.inventoryCard} onPress={onPress}>
@@ -68,15 +59,19 @@ const InventoryCard: React.FC<InventoryCardProps> = ({
       <View style={styles.cardDetails}>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Quantity:</Text>
-          <Text style={styles.detailValue}>{item.quantity}</Text>
+          <Text style={styles.detailValue}>{item.quantity || 0}</Text>
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Price:</Text>
-          <Text style={styles.detailValue}>NPR {item.price.toLocaleString()}</Text>
+          <Text style={styles.detailValue}>NPR {item.price?.toLocaleString() || 0}</Text>
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Value:</Text>
-          <Text style={styles.detailValue}>NPR {(item.quantity * item.price).toLocaleString()}</Text>
+          <Text style={styles.detailValue}>NPR {((item.quantity || 0) * (item.price || 0)).toLocaleString()}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Barcode:</Text>
+          <Text style={styles.detailValue}>{item.barcode}</Text>
         </View>
       </View>
 
@@ -97,6 +92,7 @@ const InventoryCard: React.FC<InventoryCardProps> = ({
 const InventoryScreen: React.FC = () => {
   const router = useRouter();
   const { currentShopkeeper, loading, error, clearError } = useData();
+  const { inventory, addToInventory, removeFromInventory } = useScan();
   
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -109,39 +105,8 @@ const InventoryScreen: React.FC = () => {
     category: '',
     quantity: '',
     price: '',
-    threshold: '',
+    barcode: '',
   });
-
-  // Mock inventory data - in real app, this would come from API
-  const [inventory, setInventory] = useState<InventoryItem[]>([
-    {
-      id: '1',
-      name: 'Rice',
-      category: 'Grains',
-      quantity: 50,
-      price: 120,
-      low_stock_threshold: 10,
-      last_updated: '2024-01-15',
-    },
-    {
-      id: '2',
-      name: 'Cooking Oil',
-      category: 'Oils',
-      quantity: 5,
-      price: 250,
-      low_stock_threshold: 8,
-      last_updated: '2024-01-14',
-    },
-    {
-      id: '3',
-      name: 'Sugar',
-      category: 'Sweeteners',
-      quantity: 0,
-      price: 180,
-      low_stock_threshold: 5,
-      last_updated: '2024-01-13',
-    },
-  ]);
 
   useEffect(() => {
     if (error) {
@@ -162,19 +127,21 @@ const InventoryScreen: React.FC = () => {
   const filteredAndSortedInventory = React.useMemo(() => {
     let filtered = inventory.filter(item =>
       item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchText.toLowerCase())
+      item.category.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.barcode.includes(searchText)
     );
 
     // Apply stock filter
     if (filterBy !== 'all') {
       filtered = filtered.filter(item => {
+        const quantity = item.quantity || 0;
         switch (filterBy) {
           case 'low':
-            return item.quantity > 0 && item.quantity <= item.low_stock_threshold;
+            return quantity > 0 && quantity <= 10;
           case 'out':
-            return item.quantity === 0;
+            return quantity === 0;
           case 'in':
-            return item.quantity > item.low_stock_threshold;
+            return quantity > 10;
           default:
             return true;
         }
@@ -187,9 +154,9 @@ const InventoryScreen: React.FC = () => {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'quantity':
-          return b.quantity - a.quantity;
+          return (b.quantity || 0) - (a.quantity || 0);
         case 'value':
-          return (b.quantity * b.price) - (a.quantity * a.price);
+          return ((b.quantity || 0) * (b.price || 0)) - ((a.quantity || 0) * (a.price || 0));
         default:
           return 0;
       }
@@ -199,33 +166,40 @@ const InventoryScreen: React.FC = () => {
   }, [inventory, searchText, filterBy, sortBy]);
 
   const handleAddItem = () => {
-    if (!newItem.name || !newItem.category || !newItem.quantity || !newItem.price) {
+    if (!newItem.name || !newItem.category || !newItem.quantity || !newItem.price || !newItem.barcode) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    const item: InventoryItem = {
-      id: Date.now().toString(),
+    const product = {
+      barcode: newItem.barcode,
       name: newItem.name,
       category: newItem.category,
-      quantity: parseInt(newItem.quantity),
       price: parseFloat(newItem.price),
-      low_stock_threshold: parseInt(newItem.threshold) || 5,
-      last_updated: new Date().toISOString().split('T')[0],
+      exists: true,
     };
 
-    setInventory([...inventory, item]);
-    setNewItem({ name: '', category: '', quantity: '', price: '', threshold: '' });
+    addToInventory(product, parseInt(newItem.quantity));
+    setNewItem({ name: '', category: '', quantity: '', price: '', barcode: '' });
     setShowAddModal(false);
     Alert.alert('Success', 'Item added successfully');
   };
 
-  const handleEditItem = (item: InventoryItem) => {
-    // In real app, navigate to edit screen or show edit modal
-    Alert.alert('Edit Item', `Edit functionality for ${item.name} would be implemented here`);
+  const handleEditItem = (item: any) => {
+    // Navigate to scanner with the item's barcode
+    Alert.alert('Edit Item', `Scan the barcode for ${item.name} to edit it`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Scan',
+        onPress: () => {
+          // In a real app, you would set the scan data and navigate
+          router.push('/(tabs)/scanner');
+        },
+      },
+    ]);
   };
 
-  const handleDeleteItem = (item: InventoryItem) => {
+  const handleDeleteItem = (item: any) => {
     Alert.alert(
       'Delete Item',
       `Are you sure you want to delete ${item.name}?`,
@@ -235,7 +209,7 @@ const InventoryScreen: React.FC = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setInventory(inventory.filter(i => i.id !== item.id));
+            removeFromInventory(item.barcode, item.quantity || 0);
             Alert.alert('Success', 'Item deleted successfully');
           },
         },
@@ -363,10 +337,9 @@ const InventoryScreen: React.FC = () => {
           
           <TextInput
             style={styles.modalInput}
-            placeholder="Low Stock Threshold"
-            value={newItem.threshold}
-            onChangeText={(text) => setNewItem({ ...newItem, threshold: text })}
-            keyboardType="numeric"
+            placeholder="Barcode"
+            value={newItem.barcode}
+            onChangeText={(text) => setNewItem({ ...newItem, barcode: text })}
           />
 
           <View style={styles.modalButtons}>
@@ -444,13 +417,13 @@ const InventoryScreen: React.FC = () => {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Low Stock</Text>
           <Text style={styles.summaryValue}>
-            {inventory.filter(item => item.quantity > 0 && item.quantity <= item.low_stock_threshold).length}
+            {inventory.filter(item => (item.quantity || 0) > 0 && (item.quantity || 0) <= 10).length}
           </Text>
         </View>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Out of Stock</Text>
           <Text style={styles.summaryValue}>
-            {inventory.filter(item => item.quantity === 0).length}
+            {inventory.filter(item => (item.quantity || 0) === 0).length}
           </Text>
         </View>
       </View>
@@ -458,7 +431,7 @@ const InventoryScreen: React.FC = () => {
       {/* Inventory List */}
       <FlatList
         data={filteredAndSortedInventory}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.barcode}
         renderItem={({ item }) => (
           <InventoryCard
             item={item}

@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
+import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -71,6 +72,7 @@ const HomeScreen: React.FC = () => {
     refreshData,
     clearError 
   } = useData();
+  const { logout } = useAuth();
   
   const [refreshing, setRefreshing] = useState(false);
 
@@ -89,6 +91,24 @@ const HomeScreen: React.FC = () => {
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/(auth)/login');
+          },
+        },
+      ]
+    );
   };
 
   const getMonthlyTrendsData = () => {
@@ -145,8 +165,15 @@ const HomeScreen: React.FC = () => {
         colors={['#667eea', '#764ba2']}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>My Business Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Welcome back, {currentShopkeeper?.name || 'Shopkeeper'}</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>My Business Dashboard</Text>
+            <Text style={styles.headerSubtitle}>Welcome back, {currentShopkeeper?.name || 'Shopkeeper'}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
+            <Ionicons name="person-circle" size={32} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Quick Stats */}
@@ -202,48 +229,32 @@ const HomeScreen: React.FC = () => {
       )}
 
       {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <View style={styles.actionsContainer}>
+        <Text style={styles.actionsTitle}>Quick Actions</Text>
         <View style={styles.actionButtons}>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => router.push('/predict')}
+            onPress={() => router.push('/(tabs)/scanner')}
           >
-            <Ionicons name="analytics" size={24} color="#667eea" />
-            <Text style={styles.actionButtonText}>Credit Analysis</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => router.push('/scanner')}
-          >
-            <Ionicons name="barcode" size={24} color="#667eea" />
+            <Ionicons name="barcode" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Scan Products</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => router.push('/history')}
+            onPress={() => router.push('/(tabs)/stocks')}
           >
-            <Ionicons name="time" size={24} color="#667eea" />
-            <Text style={styles.actionButtonText}>Transaction History</Text>
+            <Ionicons name="cube" size={24} color="#fff" />
+            <Text style={styles.actionButtonText}>View Inventory</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Business Insights */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Business Insights</Text>
-        <View style={styles.insightCard}>
-          <Ionicons name="bulb" size={20} color="#FFC107" />
-          <Text style={styles.insightText}>
-            {(currentShopkeeper?.credit_score ?? 0) >= 80 
-              ? "Excellent! Your credit score shows strong business performance."
-              : (currentShopkeeper?.credit_score ?? 0) >= 60
-              ? "Good progress! Focus on increasing transactions to improve your score."
-              : "Consider increasing your monthly transactions to boost your credit score."
-            }
-          </Text>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push('/(tabs)/history')}
+          >
+            <Ionicons name="time" size={24} color="#fff" />
+            <Text style={styles.actionButtonText}>History</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -256,21 +267,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
     color: '#fff',
-    opacity: 0.8,
+    opacity: 0.9,
+  },
+  profileButton: {
+    padding: 8,
   },
   statsContainer: {
     padding: 20,
@@ -278,44 +299,44 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,
-    marginHorizontal: 5,
-    borderRadius: 12,
-    overflow: 'hidden',
+    marginHorizontal: 4,
   },
   statCardGradient: {
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
   },
   statCardContent: {
     alignItems: 'center',
   },
   statCardValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 8,
+    marginBottom: 4,
   },
   statCardTitle: {
     fontSize: 14,
     color: '#fff',
-    marginTop: 5,
     textAlign: 'center',
+    fontWeight: '500',
   },
   statCardSubtitle: {
     fontSize: 12,
     color: '#fff',
     opacity: 0.8,
-    marginTop: 2,
     textAlign: 'center',
+    marginTop: 2,
   },
   chartContainer: {
     backgroundColor: '#fff',
     margin: 20,
+    padding: 16,
     borderRadius: 12,
-    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -323,64 +344,46 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 16,
     textAlign: 'center',
   },
   chart: {
     borderRadius: 12,
   },
-  section: {
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 12,
+  actionsContainer: {
     padding: 20,
+  },
+  actionsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 15,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  actionButton: {
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    minWidth: 80,
-  },
   actionButtonText: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  insightCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#fff3cd',
-    padding: 15,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFC107',
-  },
-  insightText: {
-    flex: 1,
-    marginLeft: 10,
+    color: '#fff',
     fontSize: 14,
-    color: '#856404',
-    lineHeight: 20,
+    fontWeight: '500',
+    marginTop: 8,
   },
 });
 

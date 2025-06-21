@@ -7,11 +7,13 @@ const path = require('path');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5000';
 
 // Middleware
 app.use(cors());
@@ -123,6 +125,56 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Python API integration
+async function calculateCreditScoreWithPython(data) {
+  try {
+    const response = await axios.post(`${PYTHON_API_URL}/calculate_credit_score`, data, {
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error calling Python API:', error.message);
+    // Fallback to JavaScript calculation
+    return calculateCreditScoreJS(data);
+  }
+}
+
+// Fallback JavaScript credit score calculation
+function calculateCreditScoreJS(data) {
+  let score = 50; // Base score
+
+  // Payment reliability (30 points)
+  score += (data.payment_reliability || 0) * 30;
+
+  // Profit margin (20 points)
+  const profitMargin = (data.avg_profit_margin || 0) / 100;
+  score += Math.min(profitMargin * 100, 20);
+
+  // Transaction volume (15 points)
+  const transactions = data.transactions_per_month || 0;
+  score += Math.min(transactions / 10, 15);
+
+  // Profit trend (15 points)
+  if (data.profit_trend > 0) {
+    score += 15;
+  } else if (data.profit_trend > -10000) {
+    score += 10;
+  }
+
+  return Math.round(Math.min(score, 100));
+}
+
+function getRiskCategory(score) {
+  if (score >= 80) return 'Excellent';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Fair';
+  if (score >= 20) return 'Moderate Risk';
+  return 'High Risk';
+}
+
 // Routes
 
 // Health check endpoint (no authentication required)
@@ -130,6 +182,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Backend server is running',
+    python_api_url: PYTHON_API_URL,
     timestamp: new Date().toISOString()
   });
 });
@@ -173,7 +226,7 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Shopkeeper routes
-app.get('/api/shopkeepers', authenticateToken, (req, res) => {
+app.get('/api/shopkeepers', authenticateToken, async (req, res) => {
   const query = `
     SELECT 
       shopkeeper_id,
@@ -196,23 +249,43 @@ app.get('/api/shopkeepers', authenticateToken, (req, res) => {
     GROUP BY shopkeeper_id, name, business_type
   `;
 
-  db.all(query, (err, rows) => {
+  db.all(query, async (err, rows) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ message: 'Database error' });
     }
 
-    // Calculate credit scores
-    const shopkeepers = rows.map(row => {
-      const creditScore = calculateCreditScore(row);
-      return {
-        ...row,
-        credit_score: creditScore,
-        risk_category: getRiskCategory(creditScore)
-      };
-    });
+    try {
+      // Calculate credit scores using Python API
+      const shopkeepersWithScores = await Promise.all(
+        rows.map(async (row) => {
+          const creditData = {
+            transactions: row.transactions_per_month,
+            on_time_payments: row.on_time_payments,
+            missed_payments: row.missed_payments,
+            avg_transaction_amount: row.avg_transaction_amount,
+            profit: row.monthly_profit_avg,
+            revenue: row.monthly_revenue_avg,
+            expenses: row.monthly_revenue_avg - row.monthly_profit_avg,
+            days_active: row.days_active
+          };
 
-    res.json(shopkeepers);
+          const creditResult = await calculateCreditScoreWithPython(creditData);
+          
+          return {
+            ...row,
+            credit_score: creditResult.credit_score,
+            risk_category: creditResult.risk_category,
+            credit_calculation_date: creditResult.calculation_date
+          };
+        })
+      );
+
+      res.json(shopkeepersWithScores);
+    } catch (error) {
+      console.error('Error calculating credit scores:', error);
+      res.status(500).json({ message: 'Error calculating credit scores' });
+    }
   });
 });
 
@@ -252,7 +325,7 @@ app.get('/api/shopkeepers/:id', authenticateToken, (req, res) => {
       return res.status(404).json({ message: 'Shopkeeper not found' });
     }
 
-    const creditScore = calculateCreditScore(row);
+    const creditScore = calculateCreditScoreJS(row);
     const shopkeeper = {
       ...row,
       credit_score: creditScore,
@@ -295,8 +368,8 @@ app.post('/api/shopkeepers/data', authenticateToken, (req, res) => {
   });
 });
 
-// Dashboard stats
-app.get('/api/analytics/dashboard', authenticateToken, (req, res) => {
+// Dashboard stats endpoint
+app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
   const query = `
     SELECT 
       COUNT(DISTINCT shopkeeper_id) as total_shopkeepers,
@@ -322,7 +395,7 @@ app.get('/api/analytics/dashboard', authenticateToken, (req, res) => {
     ];
 
     const stats = {
-      total_shopkeepers: row.total_shopkeepers,
+      total_shopkeepers: row.total_shopkeepers || 1,
       average_credit_score: 78, // Mock for now
       risk_distribution: {
         'Excellent': 0,
@@ -335,6 +408,37 @@ app.get('/api/analytics/dashboard', authenticateToken, (req, res) => {
     };
 
     res.json(stats);
+  });
+});
+
+// Business type analytics endpoint
+app.get('/api/analytics/business-types', authenticateToken, (req, res) => {
+  const query = `
+    SELECT 
+      business_type,
+      COUNT(DISTINCT shopkeeper_id) as count,
+      AVG((profit / revenue) * 100) as avg_profit_margin
+    FROM shopkeeper_data 
+    GROUP BY business_type
+  `;
+
+  db.all(query, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ message: 'Database error' });
+    }
+
+    const analytics = {};
+    rows.forEach(row => {
+      analytics[row.business_type] = {
+        count: row.count,
+        average_credit_score: 78, // Mock for now
+        average_profit_margin: row.avg_profit_margin || 0,
+        top_performers: ['Sample Shopkeeper'] // Mock for now
+      };
+    });
+
+    res.json(analytics);
   });
 });
 
@@ -376,41 +480,11 @@ app.get('/api/credit/report/:shopkeeperId', authenticateToken, (req, res) => {
   res.json(report);
 });
 
-// Helper functions
-function calculateCreditScore(data) {
-  let score = 50; // Base score
-
-  // Payment reliability (30 points)
-  score += (data.payment_reliability || 0) * 30;
-
-  // Profit margin (20 points)
-  const profitMargin = (data.avg_profit_margin || 0) / 100;
-  score += Math.min(profitMargin * 100, 20);
-
-  // Transaction volume (15 points)
-  const transactions = data.transactions_per_month || 0;
-  score += Math.min(transactions / 10, 15);
-
-  // Profit trend (15 points)
-  if (data.profit_trend > 0) {
-    score += 15;
-  } else if (data.profit_trend > -10000) {
-    score += 10;
-  }
-
-  return Math.round(Math.min(score, 100));
-}
-
-function getRiskCategory(score) {
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  if (score >= 20) return 'Moderate Risk';
-  return 'High Risk';
-}
-
 // CSV Upload and Processing Routes
 app.post('/api/upload/csv', upload.single('file'), (req, res) => {
+  // For demo purposes, skip authentication on CSV upload
+  // In production, you should add: authenticateToken,
+  
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
@@ -418,24 +492,47 @@ app.post('/api/upload/csv', upload.single('file'), (req, res) => {
   const results = [];
   const filePath = req.file.path;
 
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(400).json({ message: 'Uploaded file not found' });
+  }
+
   fs.createReadStream(filePath)
     .pipe(csv())
     .on('data', (data) => results.push(data))
     .on('end', () => {
+      if (results.length === 0) {
+        // Clean up empty file
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ message: 'CSV file is empty or invalid' });
+      }
+
       // Process the CSV data
       processCSVData(results, (err, processedData) => {
         if (err) {
+          // Clean up file on error
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
           return res.status(500).json({ message: 'Error processing CSV', error: err.message });
         }
 
         // Save to database
         saveCSVDataToDatabase(processedData, (err, savedData) => {
           if (err) {
+            // Clean up file on error
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
             return res.status(500).json({ message: 'Error saving to database', error: err.message });
           }
 
           // Clean up uploaded file
-          fs.unlinkSync(filePath);
+          try {
+            fs.unlinkSync(filePath);
+          } catch (cleanupError) {
+            console.error('Error cleaning up file:', cleanupError);
+          }
 
           res.json({
             message: 'CSV processed successfully',
@@ -445,6 +542,14 @@ app.post('/api/upload/csv', upload.single('file'), (req, res) => {
           });
         });
       });
+    })
+    .on('error', (error) => {
+      // Clean up file on error
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      console.error('CSV parsing error:', error);
+      res.status(500).json({ message: 'Error parsing CSV file', error: error.message });
     });
 });
 
@@ -505,7 +610,7 @@ function aggregateShopkeeperData(group) {
     (parseFloat(group[group.length - 1].revenue) - parseFloat(group[0].revenue)) / parseFloat(group[0].revenue) * 100 : 0;
 
   // Calculate credit score
-  const creditScore = calculateCreditScore({
+  const creditScore = calculateCreditScoreJS({
     payment_reliability,
     avg_profit_margin,
     transactions_per_month,

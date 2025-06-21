@@ -364,14 +364,12 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/upload/csv`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${await this.getAuthToken()}`,
-        },
         body: formData,
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
       
       const result = await response.json();
@@ -400,4 +398,5 @@ class ApiService {
   }
 }
 
+// Export a singleton instance
 export const apiService = new ApiService();

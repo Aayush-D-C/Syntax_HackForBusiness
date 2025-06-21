@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { useData } from '../../context/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -46,6 +46,48 @@ const CreditMetric: React.FC<CreditMetricProps> = ({
     </LinearGradient>
   </View>
 );
+
+const CircularProgress: React.FC<{ score: number; size?: number }> = ({ score, size = 120 }) => {
+  const color = getCreditScoreColor(score);
+
+  return (
+    <View style={[styles.circularProgressContainer, { width: size, height: size }]}>
+      <View style={styles.circularProgress}>
+        <View
+          style={[
+            styles.circularProgressTrack,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderWidth: 8,
+              borderColor: '#f0f0f0',
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.circularProgressFill,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderWidth: 8,
+              borderColor: color,
+              borderTopColor: 'transparent',
+              borderRightColor: 'transparent',
+              transform: [{ rotate: '-90deg' }],
+            },
+          ]}
+        />
+      </View>
+      <View style={styles.circularProgressText}>
+        <Text style={[styles.circularProgressScore, { color }]}>{score}</Text>
+        <Text style={styles.circularProgressLabel}>Score</Text>
+      </View>
+    </View>
+  );
+};
 
 const getCreditScoreColor = (score: number): string => {
   if (score >= 80) return '#4CAF50';
@@ -95,6 +137,52 @@ export default function CreditAnalysisScreen() {
     };
   };
 
+  const getPerformanceData = () => {
+    const shopkeeper = currentShopkeeper;
+    if (!shopkeeper) return null;
+
+    return {
+      labels: ['Profit', 'Revenue', 'Expenses'],
+      datasets: [
+        {
+          data: [
+            shopkeeper.monthly_profit_avg || 0,
+            shopkeeper.monthly_revenue_avg || 0,
+            (shopkeeper.monthly_revenue_avg || 0) - (shopkeeper.monthly_profit_avg || 0)
+          ]
+        }
+      ]
+    };
+  };
+
+  const getPaymentReliabilityData = () => {
+    const shopkeeper = currentShopkeeper;
+    if (!shopkeeper) return null;
+
+    const onTime = shopkeeper.on_time_payments || 0;
+    const missed = shopkeeper.missed_payments || 0;
+    const total = onTime + missed;
+
+    if (total === 0) return null;
+
+    return [
+      {
+        name: 'On Time',
+        population: onTime,
+        color: '#4CAF50',
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 12,
+      },
+      {
+        name: 'Missed',
+        population: missed,
+        color: '#F44336',
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 12,
+      },
+    ];
+  };
+
   const chartConfig = {
     backgroundColor: '#ffffff',
     backgroundGradientFrom: '#ffffff',
@@ -110,6 +198,19 @@ export default function CreditAnalysisScreen() {
       strokeWidth: '2',
       stroke: '#4CAF50',
     },
+  };
+
+  const barChartConfig = {
+    backgroundColor: '#ffffff',
+    backgroundGradientFrom: '#ffffff',
+    backgroundGradientTo: '#ffffff',
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    barPercentage: 0.7,
   };
 
   const getRecommendations = () => {
@@ -193,26 +294,13 @@ export default function CreditAnalysisScreen() {
 
       {/* Credit Score Overview */}
       <View style={styles.scoreContainer}>
-        <View style={styles.scoreCircle}>
-          <Text style={styles.scoreValue}>
-            {currentShopkeeper?.credit_score || 0}
-          </Text>
-          <Text style={styles.scoreLabel}>Credit Score</Text>
-        </View>
+        <CircularProgress score={currentShopkeeper?.credit_score || 0} />
         <View style={styles.scoreDetails}>
-          <Text style={[
-            styles.riskCategory,
-            { color: getRiskCategoryColor(currentShopkeeper?.risk_category || 'Fair') }
-          ]}>
+          <Text style={styles.riskCategory}>
             {currentShopkeeper?.risk_category || 'Calculating...'}
           </Text>
           <Text style={styles.scoreDescription}>
-            {currentShopkeeper?.credit_score >= 80 
-              ? "Excellent credit standing"
-              : currentShopkeeper?.credit_score >= 60
-              ? "Good credit standing"
-              : "Needs improvement"
-            }
+            Your credit score is based on payment history, transaction volume, and business performance
           </Text>
         </View>
       </View>
@@ -229,85 +317,114 @@ export default function CreditAnalysisScreen() {
             subtitle="On-time payments"
           />
           <CreditMetric
-            title="Monthly Profit"
-            value={`NPR ${(currentShopkeeper?.monthly_profit_avg || 0).toLocaleString()}`}
-            icon="trending-up"
-            color="#2196F3"
-            subtitle="Average monthly"
-          />
-          <CreditMetric
-            title="Transactions"
+            title="Monthly Transactions"
             value={currentShopkeeper?.transactions_per_month || 0}
             icon="card"
-            color="#FF9800"
-            subtitle="Per month"
+            color="#2196F3"
+            subtitle="Average per month"
           />
           <CreditMetric
             title="Profit Margin"
-            value={`${(currentShopkeeper?.avg_profit_margin || 0) * 100}%`}
-            icon="pie-chart"
+            value={`${(currentShopkeeper?.avg_profit_margin || 0).toFixed(1)}%`}
+            icon="trending-up"
+            color="#FF9800"
+            subtitle="Monthly average"
+          />
+          <CreditMetric
+            title="Business Days"
+            value={currentShopkeeper?.days_active || 0}
+            icon="calendar"
             color="#9C27B0"
-            subtitle="Average margin"
+            subtitle="Active days"
           />
         </View>
       </View>
 
       {/* Credit Score Trend */}
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Credit Score Trend</Text>
-        <LineChart
-          data={getCreditScoreData()}
-          width={chartWidth}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
-      </View>
+      {getCreditScoreData() && (
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Credit Score Trend (6 Months)</Text>
+          <LineChart
+            data={getCreditScoreData()}
+            width={chartWidth}
+            height={220}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+          />
+        </View>
+      )}
 
-      {/* Strengths & Weaknesses */}
+      {/* Performance Overview */}
+      {getPerformanceData() && (
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Financial Performance (NPR)</Text>
+          <BarChart
+            data={getPerformanceData()!}
+            width={chartWidth}
+            height={220}
+            chartConfig={barChartConfig}
+            style={styles.chart}
+            showValuesOnTopOfBars
+          />
+        </View>
+      )}
+
+      {/* Payment Reliability Chart */}
+      {getPaymentReliabilityData() && (
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Payment Reliability</Text>
+          <PieChart
+            data={getPaymentReliabilityData()!}
+            width={chartWidth}
+            height={220}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="15"
+            absolute
+          />
+        </View>
+      )}
+
+      {/* Analysis Sections */}
       <View style={styles.analysisContainer}>
         <View style={styles.analysisSection}>
-          <Text style={styles.analysisTitle}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-            {' '}Strengths
-          </Text>
+          <Text style={styles.analysisTitle}>Strengths</Text>
           {getStrengths().map((strength, index) => (
             <View key={index} style={styles.analysisItem}>
-              <Text style={styles.analysisText}>• {strength}</Text>
+              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+              <Text style={styles.analysisText}>{strength}</Text>
             </View>
           ))}
         </View>
 
         <View style={styles.analysisSection}>
-          <Text style={styles.analysisTitle}>
-            <Ionicons name="alert-circle" size={20} color="#FF9800" />
-            {' '}Areas for Improvement
-          </Text>
+          <Text style={styles.analysisTitle}>Areas for Improvement</Text>
           {getWeaknesses().map((weakness, index) => (
             <View key={index} style={styles.analysisItem}>
-              <Text style={styles.analysisText}>• {weakness}</Text>
+              <Ionicons name="alert-circle" size={16} color="#FF9800" />
+              <Text style={styles.analysisText}>{weakness}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.analysisSection}>
+          <Text style={styles.analysisTitle}>Recommendations</Text>
+          {getRecommendations().map((recommendation, index) => (
+            <View key={index} style={styles.analysisItem}>
+              <Ionicons name="bulb" size={16} color="#2196F3" />
+              <Text style={styles.analysisText}>{recommendation}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      {/* Recommendations */}
-      <View style={styles.recommendationsContainer}>
-        <Text style={styles.sectionTitle}>Recommendations</Text>
-        {getRecommendations().map((recommendation, index) => (
-          <View key={index} style={styles.recommendationItem}>
-            <Ionicons name="bulb" size={16} color="#FFC107" />
-            <Text style={styles.recommendationText}>{recommendation}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Action Buttons */}
+      {/* Quick Actions */}
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
           style={styles.actionButton}
-          onPress={() => router.push('/scanner')}
+          onPress={() => router.push('/(tabs)/scanner')}
         >
           <Ionicons name="barcode" size={20} color="#fff" />
           <Text style={styles.actionButtonText}>Scan Products</Text>
@@ -315,7 +432,7 @@ export default function CreditAnalysisScreen() {
         
         <TouchableOpacity 
           style={styles.actionButton}
-          onPress={() => router.push('/history')}
+          onPress={() => router.push('/(tabs)/history')}
         >
           <Ionicons name="time" size={20} color="#fff" />
           <Text style={styles.actionButtonText}>View History</Text>
@@ -332,7 +449,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 60,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
   },
@@ -352,44 +469,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     margin: 20,
-    borderRadius: 12,
     padding: 20,
-    elevation: 3,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
   },
-  scoreCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
+  circularProgressContainer: {
+    position: 'relative',
     alignItems: 'center',
-    marginRight: 20,
+    justifyContent: 'center',
   },
-  scoreValue: {
-    fontSize: 24,
+  circularProgress: {
+    position: 'absolute',
+  },
+  circularProgressTrack: {
+    position: 'absolute',
+  },
+  circularProgressFill: {
+    position: 'absolute',
+  },
+  circularProgressText: {
+    alignItems: 'center',
+  },
+  circularProgressScore: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
   },
-  scoreLabel: {
-    fontSize: 12,
+  circularProgressLabel: {
+    fontSize: 14,
     color: '#666',
-    marginTop: 2,
+    marginTop: 4,
   },
   scoreDetails: {
     flex: 1,
+    marginLeft: 20,
   },
   riskCategory: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 5,
+    color: '#333',
+    marginBottom: 8,
   },
   scoreDescription: {
     fontSize: 14,
     color: '#666',
+    lineHeight: 20,
   },
   metricsContainer: {
     padding: 20,
@@ -398,7 +525,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -407,12 +534,11 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     width: '48%',
-    marginBottom: 15,
-    borderRadius: 12,
-    overflow: 'hidden',
+    marginBottom: 16,
   },
   metricGradient: {
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
   },
   metricContent: {
     alignItems: 'center',
@@ -422,36 +548,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 8,
+    marginBottom: 4,
   },
   metricTitle: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#fff',
-    marginTop: 5,
     textAlign: 'center',
+    fontWeight: '500',
   },
   metricSubtitle: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#fff',
     opacity: 0.8,
-    marginTop: 2,
     textAlign: 'center',
+    marginTop: 2,
   },
   chartContainer: {
     backgroundColor: '#fff',
     margin: 20,
+    padding: 16,
     borderRadius: 12,
-    padding: 20,
-    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 16,
     textAlign: 'center',
   },
   chart: {
@@ -462,51 +589,31 @@ const styles = StyleSheet.create({
   },
   analysisSection: {
     backgroundColor: '#fff',
+    marginBottom: 16,
+    padding: 16,
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
   },
   analysisTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   analysisItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
   analysisText: {
     fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
-  recommendationsContainer: {
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 12,
-    padding: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  recommendationItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  recommendationText: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
     color: '#333',
-    lineHeight: 20,
+    marginLeft: 8,
+    flex: 1,
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -515,22 +622,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   actionButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#667eea',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   actionButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginLeft: 8,
   },
 });

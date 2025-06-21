@@ -1,210 +1,167 @@
-import { Text, View, StyleSheet, SectionList } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import {
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useScan } from '../../context/ScanContext';
 
-type Transaction = {
-  id: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  type: "sold" | "bought";
-  date: string;
-};
+interface HistoryItemProps {
+  operation: any;
+}
 
-const History = () => {
-  const transactions: Transaction[] = [
-    {
-      id: "1",
-      productName: "iPhone 13",
-      quantity: 2,
-      price: 999,
-      type: "sold",
-      date: "2023-05-15",
-    },
-    {
-      id: "2",
-      productName: "MacBook Pro",
-      quantity: 1,
-      price: 1999,
-      type: "sold",
-      date: "2023-05-14",
-    },
-    {
-      id: "3",
-      productName: "AirPods Pro",
-      quantity: 5,
-      price: 249,
-      type: "bought",
-      date: "2023-05-13",
-    },
-    {
-      id: "4",
-      productName: "iPad Air",
-      quantity: 3,
-      price: 599,
-      type: "sold",
-      date: "2023-05-12",
-    },
-    {
-      id: "5",
-      productName: "Apple Watch",
-      quantity: 10,
-      price: 399,
-      type: "bought",
-      date: "2023-05-10",
-    },
-  ];
-
-  const groupedTransactions = transactions.reduce((acc, transaction) => {
-    if (!acc[transaction.date]) {
-      acc[transaction.date] = [];
-    }
-    acc[transaction.date].push(transaction);
-    return acc;
-  }, {} as Record<string, Transaction[]>);
-
-  const sectionData = Object.keys(groupedTransactions).map((date) => ({
-    title: date,
-    data: groupedTransactions[date],
-  }));
-
-  const renderTransactionItem = ({ item }: { item: Transaction }) => (
-    <View
-      style={[
-        styles.transactionItem,
-        item.type === "sold" ? styles.soldItem : styles.boughtItem,
-      ]}
-    >
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.productName}</Text>
-        <Text style={styles.quantity}>Qty: {item.quantity}</Text>
+const HistoryItem: React.FC<HistoryItemProps> = ({ operation }) => {
+  const isAdd = operation.type === 'add';
+  
+  return (
+    <View style={styles.historyItem}>
+      <View style={styles.operationIcon}>
+        <Ionicons 
+          name={isAdd ? "add-circle" : "remove-circle"} 
+          size={24} 
+          color={isAdd ? "#4CAF50" : "#F44336"} 
+        />
       </View>
-      <View style={styles.priceContainer}>
-        <Text style={styles.price}>
-          ${(item.price * item.quantity).toFixed(2)}
+      
+      <View style={styles.operationDetails}>
+        <Text style={styles.productName}>{operation.product.name}</Text>
+        <Text style={styles.operationInfo}>
+          {isAdd ? 'Added' : 'Removed'} {operation.quantity} units
         </Text>
-        <Text style={styles.pricePerUnit}>(${item.price.toFixed(2)}/unit)</Text>
+        <Text style={styles.timestamp}>
+          {new Date(operation.timestamp).toLocaleString()}
+        </Text>
       </View>
-      <View
-        style={[
-          styles.typeBadge,
-          item.type === "sold" ? styles.soldBadge : styles.boughtBadge,
-        ]}
-      >
-        <Text style={styles.typeText}>
-          {item.type === "sold" ? "SOLD" : "BOUGHT"}
+      
+      <View style={styles.operationValue}>
+        <Text style={styles.valueText}>
+          NPR {(operation.quantity * operation.product.price).toLocaleString()}
         </Text>
       </View>
     </View>
   );
+};
+
+export default function HistoryScreen() {
+  const { operations } = useScan();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Transaction History</Text>
-      
-      <SectionList
-        sections={sectionData}
-        keyExtractor={(item) => item.id}
-        renderItem={renderTransactionItem}
-        renderSectionHeader={({ section: { title } }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>{title}</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Inventory History</Text>
+        <Text style={styles.headerSubtitle}>
+          Recent inventory operations
+        </Text>
+      </View>
+
+      <FlatList
+        data={operations}
+        keyExtractor={(item, index) => `${item.timestamp}-${index}`}
+        renderItem={({ item }) => <HistoryItem operation={item} />}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="time-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>No operations yet</Text>
+            <Text style={styles.emptySubtext}>
+              Start scanning products to see inventory history
+            </Text>
           </View>
-        )}
-        contentContainerStyle={styles.listContent}
-        stickySectionHeadersEnabled={true}
+        }
       />
-    </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
   header: {
+    padding: 20,
+    paddingTop: 50,
+    backgroundColor: '#007AFF',
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.8,
+    marginTop: 5,
+  },
+  listContainer: {
+    padding: 20,
+  },
+  historyItem: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
     padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  sectionHeader: {
-    backgroundColor: "#fff",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  sectionHeaderText: {
-    fontWeight: "600",
-    color: "#555",
-  },
-  transactionItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
+    borderRadius: 12,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
   },
-  soldItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#4CAF50",
+  operationIcon: {
+    marginRight: 16,
+    justifyContent: 'center',
   },
-  boughtItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#F44336",
-  },
-  productInfo: {
+  operationDetails: {
     flex: 1,
   },
   productName: {
-    fontWeight: "bold",
     fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 4,
   },
-  quantity: {
-    color: "#666",
+  operationInfo: {
     fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
   },
-  priceContainer: {
-    alignItems: "flex-end",
-    marginRight: 16,
-  },
-  price: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  pricePerUnit: {
-    color: "#666",
+  timestamp: {
     fontSize: 12,
+    color: '#999',
   },
-  typeBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+  operationValue: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
   },
-  soldBadge: {
-    backgroundColor: "#E8F5E9",
+  valueText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
-  boughtBadge: {
-    backgroundColor: "#FFEBEE",
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
   },
-  typeText: {
-    fontSize: 12,
-    fontWeight: "bold",
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    fontWeight: '500',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 40,
   },
 });
-
-export default History;

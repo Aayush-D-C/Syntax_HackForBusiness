@@ -1,10 +1,10 @@
 // app/(tabs)/scanner.tsx
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { useState, useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useScan } from '../../context/ScanContext';
+import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
+import { useScan } from '../../context/ScanContext';
 
 export default function BarcodeScanner() {
   const [facing, setFacing] = useState<'back' | 'front'>('back');
@@ -23,10 +23,11 @@ export default function BarcodeScanner() {
       Vibration.vibrate(100);
       setScanned(true);
       setScanData(data);
+      
       setTimeout(() => {
         setScanned(false);
-        router.back();
-      }, 2000);
+        router.push('/product-action');
+      }, 1000);
     }
   };
 
@@ -69,24 +70,25 @@ export default function BarcodeScanner() {
           ],
         }}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.scanFrame} />
-          <Text style={styles.scanText}>Align barcode within the frame</Text>
-        </View>
+      />
+      
+      {/* Overlay positioned absolutely */}
+      <View style={styles.overlay}>
+        <View style={styles.scanFrame} />
+        <Text style={styles.scanText}>Align barcode within the frame</Text>
+      </View>
 
-        <View style={styles.controls}>
-          <TouchableOpacity style={styles.controlButton} onPress={toggleCameraFacing}>
-            <MaterialIcons name="flip-camera-android" size={32} color="white" />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.controls}>
+        <TouchableOpacity style={styles.controlButton} onPress={toggleCameraFacing}>
+          <MaterialIcons name="flip-camera-android" size={32} color="white" />
+        </TouchableOpacity>
+      </View>
 
-        {scanned && (
-          <View style={styles.successOverlay}>
-            <Text style={styles.successText}>Barcode scanned successfully!</Text>
-          </View>
-        )}
-      </CameraView>
+      {scanned && (
+        <View style={styles.successOverlay}>
+          <Text style={styles.successText}>Barcode scanned successfully!</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -127,7 +129,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -149,6 +155,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 40,
     right: 20,
+    zIndex: 10,
   },
   controlButton: {
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -163,6 +170,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,180,0,0.7)',
     padding: 20,
     alignItems: 'center',
+    zIndex: 20,
   },
   successText: {
     color: 'white',

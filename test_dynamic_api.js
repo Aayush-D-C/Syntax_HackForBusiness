@@ -14,8 +14,16 @@ async function testCSVUpload() {
 
     console.log('📁 CSV file found, testing upload...');
     
-    // Create form data
-    const FormData = require('form-data');
+    // Check if form-data is available
+    let FormData;
+    try {
+      FormData = require('form-data');
+    } catch (error) {
+      console.log('❌ form-data package not found. Installing...');
+      console.log('Please run: npm install form-data');
+      return;
+    }
+    
     const form = new FormData();
     form.append('file', fs.createReadStream(csvPath));
 
@@ -35,7 +43,8 @@ async function testCSVUpload() {
       console.log(`📊 Processed ${result.processed_records} records`);
       console.log(`👥 Added ${result.shopkeepers_added} shopkeepers`);
     } else {
-      console.log('❌ Upload failed:', response.status);
+      const errorText = await response.text();
+      console.log('❌ Upload failed:', response.status, errorText);
     }
 
   } catch (error) {
@@ -62,7 +71,8 @@ async function testGetShopkeepers() {
         console.log(`- ${shop.name} (${shop.business_type}): Score ${shop.credit_score} - ${shop.risk_category}`);
       });
     } else {
-      console.log('❌ Failed to get shopkeepers:', response.status);
+      const errorText = await response.text();
+      console.log('❌ Failed to get shopkeepers:', response.status, errorText);
     }
 
   } catch (error) {
@@ -70,11 +80,30 @@ async function testGetShopkeepers() {
   }
 }
 
+// Test health endpoint
+async function testHealth() {
+  try {
+    const response = await fetch('http://localhost:3001/api/health');
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log('✅ Health check passed:', result.message);
+    } else {
+      console.log('❌ Health check failed:', response.status);
+    }
+  } catch (error) {
+    console.log('❌ Health check error:', error.message);
+  }
+}
+
 // Run tests
 async function runTests() {
   console.log('🧪 Testing Dynamic API Implementation...\n');
   
-  console.log('1️⃣ Testing CSV Upload...');
+  console.log('0️⃣ Testing Health Check...');
+  await testHealth();
+  
+  console.log('\n1️⃣ Testing CSV Upload...');
   await testCSVUpload();
   
   console.log('\n2️⃣ Testing Shopkeepers Retrieval...');

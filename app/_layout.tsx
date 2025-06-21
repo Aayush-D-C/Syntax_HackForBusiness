@@ -17,15 +17,18 @@ function RootLayout() {
 
     const inAuthGroup = segments[0] === "(auth)";
     const inWelcomeScreen = segments[0] === "welcome";
+    const inTabsHome = segments[0] === "(tabs)" && segments[1] === "home";
 
     if (!isLoggedIn) {
       if (!inAuthGroup && !inWelcomeScreen) {
         router.replace("/welcome");
       }
     } else if (isLoggedIn && (inAuthGroup || inWelcomeScreen)) {
-      router.replace("/(tabs)/home");
+      if (!inTabsHome) {
+        router.replace("/(tabs)/home");
+      }
     }
-  }, [isLoggedIn, segments, isInitialized, router]);
+  }, [isLoggedIn, isInitialized, segments, router]);
 
   return (
     <Stack>
@@ -33,6 +36,7 @@ function RootLayout() {
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="add-shopkeeper" options={{ headerShown: false }} />
+      <Stack.Screen name="product-action" options={{ headerShown: false }} />
     </Stack>
   );
 }
