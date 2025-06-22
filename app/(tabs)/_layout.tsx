@@ -7,7 +7,6 @@ const TABS = [
   { name: 'home', label: 'Dashboard', icon: 'home' },
   { name: 'stocks', label: 'Inventory', icon: 'cube' },
   { name: 'scanner', label: '', icon: 'barcode-scan', center: true },
-  { name: 'predict', label: 'Credit Score', icon: 'chart-line' },
   { name: 'blockchain', label: 'Blockchain', icon: 'block-helper' },
   { name: 'history', label: 'History', icon: 'clock' },
 ];
