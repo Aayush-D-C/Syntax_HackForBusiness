@@ -1,7 +1,6 @@
 // context/AuthContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
-import { apiService } from '../services/apiService';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 
 type AuthContextType = {
   isLoggedIn: boolean;
@@ -25,23 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
 
   // Check for existing token on app start
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAuthStatus = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
-          // Verify token with backend
-          try {
-            const response = await fetch('http://localhost:3001/api/health');
-            if (response.ok) {
-              setIsLoggedIn(true);
-              setUser({ name: 'Ram Kumar', business_type: 'Grocery Store' });
-            }
-          } catch (error) {
-            console.log('Backend not available, using mock auth');
-            setIsLoggedIn(true);
-            setUser({ name: 'Ram Kumar', business_type: 'Grocery Store' });
-          }
+          // For now, just check if token exists (mock auth)
+          setIsLoggedIn(true);
+          setUser({ name: 'Ram Kumar', business_type: 'Grocery Store' });
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
@@ -51,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuthStatus();
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const login = useCallback(async (username: string, password: string) => {
     try {
@@ -59,21 +49,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Username and password are required');
       }
       
-      // Try real API first
-      try {
-        const result = await apiService.login(username, password);
-        await AsyncStorage.setItem('authToken', result.token);
-        setUser(result.user);
-        setIsLoggedIn(true);
-      } catch (apiError) {
-        console.log('API login failed, using mock auth:', apiError);
-        // Fallback to mock authentication
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await AsyncStorage.setItem('authToken', 'mock-token');
-        setUser({ name: 'Ram Kumar', business_type: 'Grocery Store' });
-        setIsLoggedIn(true);
-      }
+      // Use mock authentication for now
+      console.log('Using mock authentication');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      
+      // Set mock user data
+      const mockUser = { name: 'Ram Kumar', business_type: 'Grocery Store' };
+      const mockToken = 'mock-token-' + Date.now();
+      
+      await AsyncStorage.setItem('authToken', mockToken);
+      setUser(mockUser);
+      setIsLoggedIn(true);
+      
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   }, []);
@@ -81,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await AsyncStorage.removeItem('authToken');
-      await apiService.logout();
+      // Skip API call for now since we're using mock data
+      console.log('Mock logout completed');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

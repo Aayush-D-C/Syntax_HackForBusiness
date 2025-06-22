@@ -2,15 +2,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
-// Determine the correct API base URL based on platform and environment
+// TEMPORARILY DISABLED - Using mock data only for development
 const getApiBaseUrl = () => {
-  if (__DEV__) {
-    // Development environment - use localhost for all platforms
-    return 'http://localhost:3001/api';
-  } else {
-    // Production environment - replace with your actual production API URL
-    return 'https://your-production-api.com/api';
-  }
+  // Force mock data for now
+  return 'http://localhost:3001/api'; // This won't be used since we're forcing mock data
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -148,6 +143,12 @@ class ApiService {
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+    // TEMPORARILY FORCE MOCK DATA - Skip all network requests
+    console.log(`Skipping API request to: ${endpoint} - Using mock data`);
+    return this.getMockData(endpoint);
+    
+    // Original code commented out for now
+    /*
     const token = await this.getAuthToken();
     const url = `${API_BASE_URL}${endpoint}`;
     
@@ -162,24 +163,39 @@ class ApiService {
 
     try {
       console.log(`Making API request to: ${url}`);
-      const response = await fetch(url, config);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error('API request failed:', error);
-      console.log('Falling back to mock data for endpoint:', endpoint);
       
-      // Fallback to mock data for development
-      if (__DEV__) {
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        console.log('Network error detected, using mock data for endpoint:', endpoint);
         return this.getMockData(endpoint);
       }
       
-      throw error;
+      if (error.name === 'AbortError') {
+        console.log('Request timeout, using mock data for endpoint:', endpoint);
+        return this.getMockData(endpoint);
+      }
+      
+      console.log('Falling back to mock data for endpoint:', endpoint);
+      return this.getMockData(endpoint);
     }
+    */
   }
 
   private getMockData(endpoint: string): any {
@@ -196,6 +212,26 @@ class ApiService {
             name: 'Ram Kumar',
             business_type: 'Grocery Store'
           }
+        };
+      case '/predictions/credit-risk':
+        // AI prediction mock data
+        return {
+          predicted_risk_category: 'Good',
+          probability_scores: {
+            'Excellent': 0.15,
+            'Good': 0.45,
+            'Fair': 0.25,
+            'Moderate Risk': 0.10,
+            'High Risk': 0.05
+          },
+          credit_score_estimate: 78
+        };
+      case '/predictions/business-performance/1':
+        // AI business performance prediction
+        return {
+          next_month_profit: 46500,
+          next_month_revenue: 185000,
+          growth_probability: 0.75
         };
       default:
         if (endpoint.startsWith('/shopkeepers/')) {

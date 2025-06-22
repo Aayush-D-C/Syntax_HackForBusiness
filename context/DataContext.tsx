@@ -1,6 +1,6 @@
 // context/DataContext.tsx
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { apiService, AggregatedShopkeeper, CreditReport } from '../services/apiService';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer, useState } from 'react';
+import { AggregatedShopkeeper, apiService, CreditReport } from '../services/apiService';
 
 interface DataState {
   shopkeepers: AggregatedShopkeeper[];
@@ -132,16 +132,17 @@ interface DataProviderProps {
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(dataReducer, initialState);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  const handleError = (error: any) => {
+  const handleError = useCallback((error: any) => {
     console.error('API Error:', error);
     dispatch({ 
       type: 'SET_ERROR', 
       payload: error.message || 'An unexpected error occurred' 
     });
-  };
+  }, []);
 
-  const fetchShopkeepers = async () => {
+  const fetchShopkeepers = useCallback(async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -151,9 +152,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const fetchShopkeeperById = async (id: string) => {
+  const fetchShopkeeperById = useCallback(async (id: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -163,9 +164,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const addShopkeeper = async (data: any) => {
+  const addShopkeeper = useCallback(async (data: any) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -176,9 +177,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [fetchShopkeepers, handleError]);
 
-  const updateShopkeeper = async (id: string, data: any) => {
+  const updateShopkeeper = useCallback(async (id: string, data: any) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -190,9 +191,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const deleteShopkeeper = async (id: string) => {
+  const deleteShopkeeper = useCallback(async (id: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -202,13 +203,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const setCurrentShopkeeper = (shopkeeper: AggregatedShopkeeper | null) => {
+  const setCurrentShopkeeper = useCallback((shopkeeper: AggregatedShopkeeper | null) => {
     dispatch({ type: 'SET_CURRENT_SHOPKEEPER', payload: shopkeeper });
-  };
+  }, []);
 
-  const fetchCreditReport = async (shopkeeperId: string) => {
+  const fetchCreditReport = useCallback(async (shopkeeperId: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -221,9 +222,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const recalculateCreditScores = async () => {
+  const recalculateCreditScores = useCallback(async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -234,9 +235,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [fetchShopkeepers, handleError]);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -246,23 +247,27 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: 'SET_ERROR', payload: null });
-  };
+  }, []);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     await Promise.all([
       fetchShopkeepers(),
       fetchDashboardStats()
     ]);
-  };
+  }, [fetchShopkeepers, fetchDashboardStats]);
 
-  // Initialize data on mount
+  // Initialize data on mount - only run once and only if not already loaded
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (!isDataLoaded) {
+      console.log('Loading initial data...');
+      refreshData();
+      setIsDataLoaded(true);
+    }
+  }, [isDataLoaded, refreshData]);
 
   const contextValue: DataContextType = {
     ...state,

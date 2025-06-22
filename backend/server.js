@@ -14,7 +14,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5000';
+const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://192.168.78.234:5000';
 
 // Initialize blockchain
 const salesBlockchain = new SalesBlockchain(2);
@@ -244,7 +244,7 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Shopkeeper routes
-app.get('/api/shopkeepers', authenticateToken, async (req, res) => {
+app.get('/api/shopkeepers', async (req, res) => {
   const query = `
     SELECT 
       shopkeeper_id,
@@ -307,7 +307,7 @@ app.get('/api/shopkeepers', authenticateToken, async (req, res) => {
   });
 });
 
-app.get('/api/shopkeepers/:id', authenticateToken, (req, res) => {
+app.get('/api/shopkeepers/:id', (req, res) => {
   const { id } = req.params;
   
   const query = `
@@ -387,7 +387,7 @@ app.post('/api/shopkeepers/data', authenticateToken, (req, res) => {
 });
 
 // Dashboard stats endpoint
-app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
+app.get('/api/dashboard/stats', (req, res) => {
   const query = `
     SELECT 
       COUNT(DISTINCT shopkeeper_id) as total_shopkeepers,
@@ -719,6 +719,82 @@ function saveCSVDataToDatabase(processedData, callback) {
     });
   });
 }
+
+// Product management endpoints
+app.get('/api/products', (req, res) => {
+  // For now, return mock data since we don't have a products table
+  const mockProducts = [
+    {
+      id: '1',
+      name: 'Sample Product 1',
+      barcode: '123456789',
+      quantity: 10,
+      price: 25.99,
+      addedDate: new Date().toISOString()
+    },
+    {
+      id: '2',
+      name: 'Sample Product 2',
+      barcode: '987654321',
+      quantity: 5,
+      price: 15.99,
+      addedDate: new Date().toISOString()
+    }
+  ];
+  
+  res.json({
+    success: true,
+    data: mockProducts
+  });
+});
+
+app.post('/api/products', (req, res) => {
+  const { name, barcode, quantity, price } = req.body;
+  
+  if (!name || !quantity || !price) {
+    return res.status(400).json({
+      success: false,
+      message: 'Name, quantity, and price are required'
+    });
+  }
+  
+  // Mock product creation
+  const newProduct = {
+    id: Date.now().toString(),
+    name,
+    barcode: barcode || `BAR${Date.now()}`,
+    quantity: parseInt(quantity),
+    price: parseFloat(price),
+    addedDate: new Date().toISOString()
+  };
+  
+  res.json({
+    success: true,
+    message: 'Product added successfully',
+    data: newProduct
+  });
+});
+
+app.delete('/api/products/:barcode', (req, res) => {
+  const { barcode } = req.params;
+  
+  // Mock product removal
+  const removedProduct = {
+    id: '1',
+    name: 'Sample Product',
+    barcode,
+    quantity: 1,
+    price: 25.99
+  };
+  
+  res.json({
+    success: true,
+    message: 'Product removed successfully',
+    data: {
+      removedProduct
+    }
+  });
+});
 
 // Blockchain endpoints
 app.get('/api/blockchain/status', (req, res) => {

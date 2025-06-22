@@ -211,6 +211,8 @@ export default function CreditAnalysisScreen() {
       borderRadius: 16,
     },
     barPercentage: 0.7,
+    yAxisLabel: '',
+    yAxisSuffix: '',
   };
 
   const getRecommendations = () => {

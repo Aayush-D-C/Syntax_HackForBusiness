@@ -1,6 +1,7 @@
 // context/ScanContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { useBlockchain } from './BlockchainContext';
 
 interface Product {
   barcode: string;
@@ -18,7 +19,7 @@ interface InventoryOperation {
   timestamp: string;
 }
 
-type ScanContextType = {
+interface ScanContextType {
   scanData: string;
   setScanData: (data: string) => void;
   clearScanData: () => void;
@@ -32,31 +33,30 @@ type ScanContextType = {
   addOperation: (operation: InventoryOperation) => void;
   loadInventory: () => Promise<void>;
   saveInventory: () => Promise<void>;
+}
+
+const ScanContext = createContext<ScanContextType | undefined>(undefined);
+
+export const useScan = (): ScanContextType => {
+  const context = useContext(ScanContext);
+  if (!context) {
+    throw new Error('useScan must be used within a ScanProvider');
+  }
+  return context;
 };
 
-const ScanContext = createContext<ScanContextType>({
-  scanData: '',
-  setScanData: () => {},
-  clearScanData: () => {},
-  scannedProduct: null,
-  setScannedProduct: () => {},
-  inventory: [],
-  addToInventory: () => {},
-  removeFromInventory: () => {},
-  getProductByBarcode: () => undefined,
-  operations: [],
-  addOperation: () => {},
-  loadInventory: async () => {},
-  saveInventory: async () => {},
-});
+interface ScanProviderProps {
+  children: ReactNode;
+}
 
-export const ScanProvider = ({ children }: { children: ReactNode }) => {
+export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
   const [scanData, setScanData] = useState('');
   const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
   const [inventory, setInventory] = useState<Product[]>([]);
   const [operations, setOperations] = useState<InventoryOperation[]>([]);
+  const { addSaleToBlockchain } = useBlockchain();
 
-  // Load inventory from AsyncStorage on app start
+  // Load inventory data on mount
   useEffect(() => {
     loadInventory();
   }, []);
@@ -69,7 +69,7 @@ export const ScanProvider = ({ children }: { children: ReactNode }) => {
       if (savedInventory) {
         setInventory(JSON.parse(savedInventory));
       } else {
-        // Initialize with sample data if no saved data exists
+        // Load sample inventory if none exists
         const sampleInventory = [
           {
             barcode: '1234567890123',
@@ -81,50 +81,34 @@ export const ScanProvider = ({ children }: { children: ReactNode }) => {
           },
           {
             barcode: '9876543210987',
-            name: 'Cooking Oil (Sunflower)',
+            name: 'Cooking Oil',
             category: 'Oils',
             price: 250,
-            quantity: 15,
+            quantity: 30,
             exists: true,
           },
           {
             barcode: '4567891234567',
             name: 'Sugar (White)',
-            category: 'Sweeteners',
+            category: 'Grains',
             price: 180,
-            quantity: 25,
+            quantity: 40,
             exists: true,
           },
           {
             barcode: '7891234567890',
             name: 'Tea (Black)',
             category: 'Beverages',
-            price: 150,
-            quantity: 30,
-            exists: true,
-          },
-          {
-            barcode: '3210987654321',
-            name: 'Milk Powder',
-            category: 'Dairy',
-            price: 300,
-            quantity: 20,
-            exists: true,
-          },
-          {
-            barcode: '6543210987654',
-            name: 'Bread (White)',
-            category: 'Bakery',
-            price: 40,
-            quantity: 0,
+            price: 270,
+            quantity: 25,
             exists: true,
           },
           {
             barcode: '1357924680135',
-            name: 'Tomato Sauce',
-            category: 'Condiments',
-            price: 80,
-            quantity: 12,
+            name: 'Wheat Flour',
+            category: 'Grains',
+            price: 95,
+            quantity: 60,
             exists: true,
           },
           {
@@ -226,31 +210,33 @@ export const ScanProvider = ({ children }: { children: ReactNode }) => {
 
   const recordSaleOnBlockchain = async (product: Product, quantity: number) => {
     try {
+      // Create sale data for blockchain
       const saleData = {
-        storeId: 'Shop-1', // You can make this dynamic based on current shopkeeper
+        id: Date.now().toString(),
+        storeId: 'Ram Kumar', // Use current shopkeeper name
         products: [{
           name: product.name,
           price: product.price,
           category: product.category,
           barcode: product.barcode
-        }]
+        }],
+        quantity: quantity,
+        total: product.price * quantity,
+        timestamp: new Date().toISOString()
       };
 
-      const response = await fetch('http://localhost:3001/api/blockchain/sale', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(saleData),
+      // Add sale directly to blockchain
+      addSaleToBlockchain(saleData);
+      
+      console.log('Sale recorded for blockchain:', {
+        product: product.name,
+        quantity: quantity,
+        total: product.price * quantity,
+        timestamp: new Date().toISOString()
       });
 
-      if (response.ok) {
-        console.log('Sale recorded on blockchain successfully');
-      } else {
-        console.error('Failed to record sale on blockchain');
-      }
     } catch (error) {
-      console.error('Error recording sale on blockchain:', error);
+      console.error('Error recording sale for blockchain:', error);
     }
   };
 
@@ -282,12 +268,4 @@ export const ScanProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </ScanContext.Provider>
   );
-};
-
-export const useScan = () => {
-  const context = useContext(ScanContext);
-  if (!context) {
-    throw new Error('useScan must be used within a ScanProvider');
-  }
-  return context;
 };

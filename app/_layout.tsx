@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../context/AuthContext";
+import { BlockchainProvider } from "../context/BlockchainContext";
 import { DataProvider } from '../context/DataContext';
 import { ScanProvider } from "../context/ScanContext";
 
@@ -48,9 +49,11 @@ export default function AppLayout() {
       <PaperProvider>
         <AuthProvider>
           <DataProvider>
-            <ScanProvider>
-              <RootLayout />
-            </ScanProvider>
+            <BlockchainProvider>
+              <ScanProvider>
+                <RootLayout />
+              </ScanProvider>
+            </BlockchainProvider>
           </DataProvider>
         </AuthProvider>
       </PaperProvider>

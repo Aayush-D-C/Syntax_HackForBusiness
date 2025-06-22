@@ -16,6 +16,8 @@ import {
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { useScan } from '../../context/ScanContext';
+import { apiService } from '../../services/apiService';
 
 const { width } = Dimensions.get('window');
 const chartWidth = width - 40;
@@ -72,10 +74,33 @@ const HomeScreen: React.FC = () => {
     refreshData,
     clearError 
   } = useData();
+  const { inventory, operations } = useScan();
   const { logout } = useAuth();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [aiPredictions, setAiPredictions] = useState<{
+    nextMonthProfit?: number;
+    nextMonthRevenue?: number;
+    growthProbability?: number;
+  }>({});
 
+  // Calculate inventory statistics
+  const inventoryStats = {
+    totalItems: inventory.length,
+    totalValue: inventory.reduce((sum, item) => sum + (item.price * (item.quantity || 0)), 0),
+    lowStockItems: inventory.filter(item => (item.quantity || 0) < 10).length,
+    totalQuantity: inventory.reduce((sum, item) => sum + (item.quantity || 0), 0)
+  };
+
+  // Calculate recent activity
+  const recentOperations = operations.slice(0, 5); // Last 5 operations
+  const todayOperations = operations.filter(op => {
+    const opDate = new Date(op.timestamp);
+    const today = new Date();
+    return opDate.toDateString() === today.toDateString();
+  });
+
+  // Handle error display
   useEffect(() => {
     if (error) {
       Alert.alert('Error', error, [
@@ -84,10 +109,39 @@ const HomeScreen: React.FC = () => {
     }
   }, [error, clearError]);
 
+  // Fetch AI predictions when shopkeeper data is available
+  useEffect(() => {
+    const fetchAiPredictions = async () => {
+      if (currentShopkeeper?.shopkeeper_id) {
+        try {
+          const prediction = await apiService.predictBusinessPerformance(currentShopkeeper.shopkeeper_id);
+          setAiPredictions({
+            nextMonthProfit: prediction.next_month_profit,
+            nextMonthRevenue: prediction.next_month_revenue,
+            growthProbability: prediction.growth_probability
+          });
+        } catch (error) {
+          console.error('Failed to fetch AI predictions:', error);
+        }
+      }
+    };
+
+    fetchAiPredictions();
+  }, [currentShopkeeper?.shopkeeper_id]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       await refreshData();
+      // Also refresh AI predictions
+      if (currentShopkeeper?.shopkeeper_id) {
+        const prediction = await apiService.predictBusinessPerformance(currentShopkeeper.shopkeeper_id);
+        setAiPredictions({
+          nextMonthProfit: prediction.next_month_profit,
+          nextMonthRevenue: prediction.next_month_revenue,
+          growthProbability: prediction.growth_probability
+        });
+      }
     } finally {
       setRefreshing(false);
     }
@@ -112,47 +166,68 @@ const HomeScreen: React.FC = () => {
   };
 
   const getMonthlyTrendsData = () => {
-    if (!dashboardStats?.monthly_trends) return null;
-
-    const labels = dashboardStats.monthly_trends.map(trend => trend.month);
-    const profitData = dashboardStats.monthly_trends.map(trend => trend.total_profit / 1000); // In thousands
-    const revenueData = dashboardStats.monthly_trends.map(trend => trend.total_revenue / 1000);
-
+    const trends = dashboardStats?.monthly_trends;
+    if (!trends || trends.length === 0) {
+      // Return fallback data structure instead of null
+      return {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+          {
+            data: [0, 0, 0, 0, 0, 0],
+            color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
+            strokeWidth: 2
+          },
+          {
+            data: [0, 0, 0, 0, 0, 0],
+            color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+            strokeWidth: 2
+          }
+        ],
+        legend: ['Profit (K)', 'Revenue (K)']
+      };
+    }
+  
+    const labels = trends.map(trend => trend.month);
+    const profitData = trends.map(trend => trend.total_profit / 1000);
+    const revenueData = trends.map(trend => trend.total_revenue / 1000);
+  
     return {
       labels,
       datasets: [
         {
           data: profitData,
-          color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
-          strokeWidth: 2,
+          color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`, // green for profit
+          strokeWidth: 2
         },
         {
           data: revenueData,
-          color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
-          strokeWidth: 2,
+          color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`, // blue for revenue
+          strokeWidth: 2
         }
       ],
       legend: ['Profit (K)', 'Revenue (K)']
     };
   };
+  
+
+  
 
   const chartConfig = {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
+    backgroundGradientFrom: "#ffffff",
+    backgroundGradientTo: "#ffffff",
     decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     style: {
-      borderRadius: 16,
+      borderRadius: 16
     },
     propsForDots: {
-      r: '4',
-      strokeWidth: '2',
-      stroke: '#ffa726',
-    },
+      r: "4",
+      strokeWidth: "2",
+      stroke: "#ffa726"
+    }
   };
-
+  
   return (
     <ScrollView 
       style={styles.container}
@@ -188,45 +263,84 @@ const HomeScreen: React.FC = () => {
             onPress={() => router.push('/predict')}
           />
           <StatCard
-            title="Monthly Profit"
-            value={`NPR ${currentShopkeeper?.monthly_profit_avg?.toLocaleString() || '0'}`}
-            icon="trending-up"
+            title="Inventory Value"
+            value={`NPR ${inventoryStats.totalValue.toLocaleString()}`}
+            icon="cube"
             color="#2196F3"
+            subtitle={`${inventoryStats.totalItems} items`}
+            onPress={() => router.push('/(tabs)/stocks')}
           />
         </View>
         
         <View style={styles.statsRow}>
           <StatCard
-            title="Transactions"
-            value={currentShopkeeper?.transactions_per_month || 0}
+            title="Total Stock"
+            value={inventoryStats.totalQuantity}
             icon="card"
             color="#FF9800"
-            subtitle="This month"
+            subtitle="Items in stock"
+            onPress={() => router.push('/(tabs)/stocks')}
           />
           <StatCard
-            title="Payment Reliability"
-            value={`${((currentShopkeeper?.payment_reliability || 0) * 100).toFixed(1)}%`}
-            icon="checkmark-circle"
-            color="#4CAF50"
-            subtitle="On-time payments"
+            title="Today's Activity"
+            value={todayOperations.length}
+            icon="time"
+            color="#9C27B0"
+            subtitle="Operations today"
+            onPress={() => router.push('/(tabs)/history')}
           />
         </View>
+
+        {/* AI Predictions Row */}
+        {aiPredictions.nextMonthProfit && (
+          <View style={styles.statsRow}>
+            <StatCard
+              title="AI Predicted Profit"
+              value={`NPR ${aiPredictions.nextMonthProfit.toLocaleString()}`}
+              icon="trending-up"
+              color="#9C27B0"
+              subtitle="Next month"
+            />
+            <StatCard
+              title="Growth Probability"
+              value={`${((aiPredictions.growthProbability || 0) * 100).toFixed(1)}%`}
+              icon="analytics"
+              color="#FF5722"
+              subtitle="AI forecast"
+            />
+          </View>
+        )}
+
+        {/* Low Stock Alert */}
+        {inventoryStats.lowStockItems > 0 && (
+          <View style={styles.alertContainer}>
+            <View style={styles.alertContent}>
+              <Ionicons name="warning" size={20} color="#FF9800" />
+              <Text style={styles.alertText}>
+                {inventoryStats.lowStockItems} item{inventoryStats.lowStockItems > 1 ? 's' : ''} running low on stock
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.alertButton}
+              onPress={() => router.push('/(tabs)/stocks')}
+            >
+              <Text style={styles.alertButtonText}>View</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
-      {/* Monthly Trends */}
-      {getMonthlyTrendsData() && (
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>My Monthly Trends (in thousands NPR)</Text>
-          <LineChart
-            data={getMonthlyTrendsData()!}
-            width={chartWidth}
-            height={220}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-          />
-        </View>
-      )}
+      <View style={styles.chartContainer}>
+        <Text style={styles.chartTitle}>My Monthly Trends (in thousands NPR)</Text>
+        <LineChart
+          data={getMonthlyTrendsData()}
+          width={chartWidth}
+          height={220}
+          chartConfig={chartConfig}
+          bezier
+          style={styles.chart}
+        />
+      </View>
 
       {/* Quick Actions */}
       <View style={styles.actionsContainer}>
@@ -384,6 +498,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginTop: 8,
+  },
+  alertContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3E0',
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+    borderRadius: 12,
+  },
+  alertContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  alertText: {
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8,
+    flex: 1,
+  },
+  alertButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#FF9800',
+  },
+  alertButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 
