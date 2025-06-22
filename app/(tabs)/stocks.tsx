@@ -303,7 +303,7 @@ const InventoryScreen: React.FC = () => {
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Add New Item</Text>
+          <Text style={styles.modalTitle}>Add New Item to Inventory</Text>
           
           <TextInput
             style={styles.modalInput}
@@ -335,12 +335,24 @@ const InventoryScreen: React.FC = () => {
             keyboardType="numeric"
           />
           
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Barcode"
-            value={newItem.barcode}
-            onChangeText={(text) => setNewItem({ ...newItem, barcode: text })}
-          />
+          <View style={styles.barcodeContainer}>
+            <TextInput
+              style={[styles.modalInput, styles.barcodeInput]}
+              placeholder="Barcode (or scan below)"
+              value={newItem.barcode}
+              onChangeText={(text) => setNewItem({ ...newItem, barcode: text })}
+            />
+            <TouchableOpacity
+              style={styles.scanBarcodeButton}
+              onPress={() => {
+                setShowAddModal(false);
+                // Navigate to scanner for adding items
+                router.push('/add-item-scanner');
+              }}
+            >
+              <Ionicons name="barcode-outline" size={24} color="#007AFF" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.modalButtons}>
             <TouchableOpacity
@@ -353,7 +365,7 @@ const InventoryScreen: React.FC = () => {
               style={[styles.modalButton, styles.saveButton]}
               onPress={handleAddItem}
             >
-              <Text style={styles.saveButtonText}>Add Item</Text>
+              <Text style={styles.saveButtonText}>Add to Inventory</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -772,6 +784,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  barcodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  barcodeInput: {
+    flex: 1,
+  },
+  scanBarcodeButton: {
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
 });
 

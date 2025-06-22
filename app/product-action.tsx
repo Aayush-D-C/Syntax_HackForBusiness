@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
@@ -15,6 +15,9 @@ import { useScan } from '../context/ScanContext';
 
 export default function ProductActionScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const isAddingItem = params.mode === 'add'; // Check if we're adding or removing
+  
   const { 
     scanData, 
     scannedProduct, 
@@ -96,10 +99,10 @@ export default function ProductActionScreen() {
       `${quantityNum} ${productName} added to inventory`,
       [
         {
-          text: 'Continue Scanning',
+          text: 'Continue Adding',
           onPress: () => {
             clearScanData();
-            router.push('/(tabs)/scanner');
+            router.push('/add-item-scanner');
           }
         },
         {
@@ -143,7 +146,7 @@ export default function ProductActionScreen() {
       `${quantityNum} ${scannedProduct.name} removed from inventory`,
       [
         {
-          text: 'Continue Scanning',
+          text: 'Continue Removing',
           onPress: () => {
             clearScanData();
             router.push('/(tabs)/scanner');
@@ -191,7 +194,7 @@ export default function ProductActionScreen() {
           <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {scannedProduct.exists ? 'Update Inventory' : 'Add New Product'}
+          {isAddingItem ? 'Add New Product' : 'Remove from Inventory'}
         </Text>
       </View>
 
@@ -213,7 +216,7 @@ export default function ProductActionScreen() {
               value={productName}
               onChangeText={setProductName}
               placeholder="Enter product name"
-              editable={!scannedProduct.exists}
+              editable={isAddingItem || !scannedProduct.exists}
             />
           </View>
 
@@ -224,7 +227,7 @@ export default function ProductActionScreen() {
               value={productCategory}
               onChangeText={setProductCategory}
               placeholder="Enter category"
-              editable={!scannedProduct.exists}
+              editable={isAddingItem || !scannedProduct.exists}
             />
           </View>
 
@@ -236,7 +239,7 @@ export default function ProductActionScreen() {
               onChangeText={setProductPrice}
               placeholder="Enter price"
               keyboardType="numeric"
-              editable={!scannedProduct.exists}
+              editable={isAddingItem || !scannedProduct.exists}
             />
           </View>
 
@@ -250,7 +253,9 @@ export default function ProductActionScreen() {
 
         {/* Quantity Input */}
         <View style={styles.quantitySection}>
-          <Text style={styles.sectionTitle}>Quantity</Text>
+          <Text style={styles.sectionTitle}>
+            {isAddingItem ? 'Quantity to Add' : 'Quantity to Remove'}
+          </Text>
           <View style={styles.quantityInput}>
             <TouchableOpacity
               style={styles.quantityButton}
@@ -284,15 +289,15 @@ export default function ProductActionScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          {scannedProduct.exists ? (
-            <TouchableOpacity style={styles.removeButton} onPress={handleRemoveFromInventory}>
-              <Ionicons name="remove-circle" size={24} color="white" />
-              <Text style={styles.buttonText}>Remove from Inventory</Text>
-            </TouchableOpacity>
-          ) : (
+          {isAddingItem ? (
             <TouchableOpacity style={styles.addButton} onPress={handleAddToInventory}>
               <Ionicons name="add-circle" size={24} color="white" />
               <Text style={styles.buttonText}>Add to Inventory</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.removeButton} onPress={handleRemoveFromInventory}>
+              <Ionicons name="remove-circle" size={24} color="white" />
+              <Text style={styles.buttonText}>Remove from Inventory</Text>
             </TouchableOpacity>
           )}
         </View>

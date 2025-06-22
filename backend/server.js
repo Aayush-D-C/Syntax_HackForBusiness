@@ -8,12 +8,16 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const axios = require('axios');
+const { SalesBlockchain, Product, SaleTransaction } = require('./blockchain_service');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5000';
+
+// Initialize blockchain
+const salesBlockchain = new SalesBlockchain(2);
 
 // Middleware
 app.use(cors());
@@ -183,6 +187,20 @@ app.get('/api/health', (req, res) => {
     status: 'ok', 
     message: 'Backend server is running',
     python_api_url: PYTHON_API_URL,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Simple blockchain test endpoint (no authentication required)
+app.get('/api/blockchain/test', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Blockchain endpoint is accessible',
+    blockchainInfo: {
+      totalBlocks: salesBlockchain.chain.length,
+      isValid: salesBlockchain.isChainValid(),
+      difficulty: salesBlockchain.difficulty
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -702,9 +720,67 @@ function saveCSVDataToDatabase(processedData, callback) {
   });
 }
 
+// Blockchain endpoints
+app.get('/api/blockchain/status', (req, res) => {
+  try {
+    const blockchainData = salesBlockchain.getBlockchainData();
+    res.json({
+      status: 'success',
+      data: blockchainData
+    });
+  } catch (error) {
+    console.error('Error getting blockchain status:', error);
+    res.status(500).json({ message: 'Error getting blockchain status' });
+  }
+});
+
+app.post('/api/blockchain/sale', (req, res) => {
+  try {
+    const { storeId, products } = req.body;
+    
+    if (!storeId || !products || !Array.isArray(products)) {
+      return res.status(400).json({ message: 'Invalid sale data' });
+    }
+    
+    // Convert products to Product objects
+    const productObjects = products.map(p => new Product(p.name, p.price, p.category, p.barcode));
+    
+    // Add sale to blockchain
+    const newBlock = salesBlockchain.addSale(storeId, productObjects);
+    
+    res.json({
+      status: 'success',
+      message: 'Sale recorded on blockchain',
+      data: {
+        blockIndex: newBlock.index,
+        transactionId: newBlock.transaction.txid,
+        total: newBlock.transaction.total
+      }
+    });
+  } catch (error) {
+    console.error('Error recording sale:', error);
+    res.status(500).json({ message: 'Error recording sale on blockchain' });
+  }
+});
+
+app.get('/api/blockchain/summary', (req, res) => {
+  try {
+    const { storeId } = req.query;
+    const summary = salesBlockchain.getSalesSummary(storeId);
+    
+    res.json({
+      status: 'success',
+      data: summary
+    });
+  } catch (error) {
+    console.error('Error getting blockchain summary:', error);
+    res.status(500).json({ message: 'Error getting blockchain summary' });
+  }
+});
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`API available at http://localhost:${PORT}/api`);
-  console.log(`Network API available at http://192.168.77.107:${PORT}/api`);
+  console.log('Blockchain initialized with difficulty:', salesBlockchain.difficulty);
 }); 

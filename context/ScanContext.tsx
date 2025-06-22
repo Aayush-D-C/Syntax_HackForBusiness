@@ -212,8 +212,46 @@ export const ScanProvider = ({ children }: { children: ReactNode }) => {
       return prev;
     });
     
+    // Record sale on blockchain if removing items
+    if (quantity > 0) {
+      const product = getProductByBarcode(barcode);
+      if (product) {
+        recordSaleOnBlockchain(product, quantity);
+      }
+    }
+    
     // Save to AsyncStorage
     setTimeout(() => saveInventory(), 100);
+  };
+
+  const recordSaleOnBlockchain = async (product: Product, quantity: number) => {
+    try {
+      const saleData = {
+        storeId: 'Shop-1', // You can make this dynamic based on current shopkeeper
+        products: [{
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          barcode: product.barcode
+        }]
+      };
+
+      const response = await fetch('http://localhost:3001/api/blockchain/sale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(saleData),
+      });
+
+      if (response.ok) {
+        console.log('Sale recorded on blockchain successfully');
+      } else {
+        console.error('Failed to record sale on blockchain');
+      }
+    } catch (error) {
+      console.error('Error recording sale on blockchain:', error);
+    }
   };
 
   const addOperation = (operation: InventoryOperation) => {

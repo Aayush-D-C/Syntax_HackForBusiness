@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (token) {
           // Verify token with backend
           try {
-            const response = await fetch('http://192.168.77.107:3001/api/health');
+            const response = await fetch('http://localhost:3001/api/health');
             if (response.ok) {
               setIsLoggedIn(true);
               setUser({ name: 'Ram Kumar', business_type: 'Grocery Store' });
@@ -73,10 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ name: 'Ram Kumar', business_type: 'Grocery Store' });
         setIsLoggedIn(true);
       }
-      
-      setIsInitialized(true);
     } catch (error) {
-      setIsInitialized(true);
       throw error;
     }
   }, []);

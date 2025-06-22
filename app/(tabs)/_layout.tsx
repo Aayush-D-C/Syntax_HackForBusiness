@@ -8,6 +8,7 @@ const TABS = [
   { name: 'stocks', label: 'Inventory', icon: 'cube' },
   { name: 'scanner', label: '', icon: 'barcode-scan', center: true },
   { name: 'predict', label: 'Credit Score', icon: 'chart-line' },
+  { name: 'blockchain', label: 'Blockchain', icon: 'block-helper' },
   { name: 'history', label: 'History', icon: 'clock' },
 ];
 
@@ -66,18 +67,20 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    height: 70,
+    height: 80,
     backgroundColor: '#fff',
     elevation: 12,
     borderTopColor: '#ddd',
     borderTopWidth: 1,
     alignItems: 'center',
     justifyContent: 'space-around',
+    paddingBottom: 10,
   },
   tab: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    paddingTop: 10,
   },
   label: {
     fontSize: 12,
@@ -85,11 +88,11 @@ const styles = StyleSheet.create({
   },
   centerButton: {
     position: 'absolute',
-    bottom: 10,
+    bottom: 15,
     alignSelf: 'center',
     backgroundColor: '#6200ee',
-    padding: 20,
-    borderRadius: 40,
+    padding: 18,
+    borderRadius: 35,
     elevation: 6,
     zIndex: 10,
   },

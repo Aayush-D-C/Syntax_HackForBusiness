@@ -1,22 +1,12 @@
 // services/apiService.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
 // API Configuration
 // Determine the correct API base URL based on platform and environment
 const getApiBaseUrl = () => {
   if (__DEV__) {
-    // Development environment
-    if (Platform.OS === 'android') {
-      // For Android, use the computer's IP address on the network
-      return 'http://192.168.77.107:3001/api';
-    } else if (Platform.OS === 'ios') {
-      // iOS simulator
-      return 'http://localhost:3001/api';
-    } else {
-      // Web or other platforms
-      return 'http://localhost:3001/api';
-    }
+    // Development environment - use localhost for all platforms
+    return 'http://localhost:3001/api';
   } else {
     // Production environment - replace with your actual production API URL
     return 'https://your-production-api.com/api';

@@ -1,12 +1,11 @@
-// app/(tabs)/scanner.tsx
 import { MaterialIcons } from '@expo/vector-icons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
-import { useScan } from '../../context/ScanContext';
+import { useScan } from '../context/ScanContext';
 
-export default function BarcodeScanner() {
+export default function AddItemScanner() {
   const [facing, setFacing] = useState<'back' | 'front'>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -45,7 +44,7 @@ export default function BarcodeScanner() {
       
       setTimeout(() => {
         setScanned(false);
-        router.push('/product-action?mode=remove');
+        router.push('/product-action?mode=add');
       }, 1000);
     }
   };
@@ -115,11 +114,14 @@ export default function BarcodeScanner() {
             ]}
           />
         </View>
-        <Text style={styles.scanText}>Scan barcode to REMOVE from inventory</Text>
-        <Text style={styles.scanSubtext}>This will record a sale on blockchain</Text>
+        <Text style={styles.scanText}>Scan barcode to ADD to inventory</Text>
+        <Text style={styles.scanSubtext}>This will open the add item form</Text>
       </View>
 
       <View style={styles.controls}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={32} color="white" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.controlButton} onPress={toggleCameraFacing}>
           <MaterialIcons name="flip-camera-android" size={32} color="white" />
         </TouchableOpacity>
@@ -184,10 +186,10 @@ const styles = StyleSheet.create({
     width: 280,
     height: 180,
     borderWidth: 3,
-    borderColor: '#00FF00',
+    borderColor: '#007AFF',
     backgroundColor: 'transparent',
     borderRadius: 10,
-    shadowColor: '#00FF00',
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
@@ -218,8 +220,16 @@ const styles = StyleSheet.create({
   controls: {
     position: 'absolute',
     bottom: 40,
+    left: 20,
     right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     zIndex: 10,
+  },
+  backButton: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 15,
+    borderRadius: 50,
   },
   controlButton: {
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -245,7 +255,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 20,
     height: 20,
-    borderColor: '#00FF00',
+    borderColor: '#007AFF',
     borderWidth: 3,
   },
   topLeft: {
@@ -278,6 +288,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 20,
-    backgroundColor: '#00FF00',
+    backgroundColor: '#007AFF',
   },
-});
+}); 
