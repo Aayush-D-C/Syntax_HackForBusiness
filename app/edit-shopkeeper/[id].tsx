@@ -146,13 +146,13 @@ export default function EditShopkeeperScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   loadingText: {
     fontSize: 16,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   errorText: {
     fontSize: 18,
@@ -174,6 +174,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
   backButton: {
     position: 'absolute',
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 20,
   },
   inputGroup: {
@@ -218,20 +219,21 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    color: '#333',
+    color: '#212121',
     marginBottom: 8,
     fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
+    color: '#212121',
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#448BEF',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   backButtonText: {
-    color: '#007AFF',
+    color: '#448BEF',
     fontSize: 16,
     fontWeight: '600',
   },

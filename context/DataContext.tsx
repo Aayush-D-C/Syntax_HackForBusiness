@@ -261,6 +261,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, [fetchShopkeepers, fetchDashboardStats]);
 
   // Initialize data on mount - only run once and only if not already loaded
+  // TEMPORARILY DISABLED TO FIX INFINITE RE-RENDER
+  /*
   useEffect(() => {
     if (!isDataLoaded) {
       console.log('Loading initial data...');
@@ -268,6 +270,36 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setIsDataLoaded(true);
     }
   }, [isDataLoaded, refreshData]);
+  */
+  
+  // Simple initialization without circular dependencies
+  useEffect(() => {
+    if (!isDataLoaded) {
+      console.log('Loading initial data...');
+      const loadInitialData = async () => {
+        try {
+          dispatch({ type: 'SET_LOADING', payload: true });
+          dispatch({ type: 'SET_ERROR', payload: null });
+          
+          const [shopkeepers, stats] = await Promise.all([
+            apiService.getShopkeepers(),
+            apiService.getDashboardStats()
+          ]);
+          
+          dispatch({ type: 'SET_SHOPKEEPERS', payload: shopkeepers });
+          dispatch({ type: 'SET_DASHBOARD_STATS', payload: stats });
+        } catch (error) {
+          console.error('API Error:', error);
+          dispatch({ 
+            type: 'SET_ERROR', 
+            payload: error.message || 'An unexpected error occurred' 
+          });
+        }
+      };
+      loadInitialData();
+      setIsDataLoaded(true);
+    }
+  }, [isDataLoaded]);
 
   const contextValue: DataContextType = {
     ...state,

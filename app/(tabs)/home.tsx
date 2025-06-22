@@ -2,7 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -57,9 +57,9 @@ const StatCard: React.FC<StatCardProps> = ({
 
 const getRiskColor = (category: string): string => {
   switch (category.toLowerCase()) {
-    case 'excellent': return '#4CAF50';
-    case 'good': return '#8BC34A';
-    case 'fair': return '#FFC107';
+    case 'excellent': return '#448BEF';
+    case 'good': return '#44D3EF';
+    case 'fair': return '#6B44EF';
     case 'moderate risk': return '#FF9800';
     case 'high risk': return '#F44336';
     default: return '#9E9E9E';
@@ -91,7 +91,7 @@ const HomeScreen: React.FC = () => {
   }>({});
 
   // Calculate dynamic credit score based on inventory operations
-  const calculateDynamicCreditScore = () => {
+  const calculateDynamicCreditScore = useCallback(() => {
     try {
       // Calculate business metrics from inventory operations
       const today = new Date().toDateString();
@@ -105,11 +105,14 @@ const HomeScreen: React.FC = () => {
         new Date(op.timestamp) >= last30Days
       );
 
+      // Calculate inventory value directly here to avoid circular dependency
+      const inventoryValue = inventory.reduce((sum, item) => sum + (item.price * (item.quantity || 0)), 0);
+
       console.log('📊 Calculating dynamic credit score...');
       console.log('📈 Recent operations:', recentOperations.length);
       console.log('📅 Today operations:', todayOperations.length);
       console.log('📦 Inventory items:', inventory.length);
-      console.log('💰 Inventory value:', inventoryStats.totalValue);
+      console.log('💰 Inventory value:', inventoryValue);
 
       // Calculate metrics
       const totalTransactions = recentOperations.length;
@@ -165,14 +168,14 @@ const HomeScreen: React.FC = () => {
           : 0.2; // Default 20% profit margin
         
         // Estimate transactions based on inventory value
-        enhancedTransactions = Math.max(5, Math.floor(inventoryStats.totalValue / 1000));
-        enhancedRevenue = inventoryStats.totalValue * 0.3; // Assume 30% of inventory value as monthly revenue
+        enhancedTransactions = Math.max(5, Math.floor(inventoryValue / 1000));
+        enhancedRevenue = inventoryValue * 0.3; // Assume 30% of inventory value as monthly revenue
         enhancedProfit = enhancedRevenue * avgProfitMargin; // Use actual profit margin
       }
       
       // Ensure minimum values for new businesses
       const minTransactions = Math.max(enhancedTransactions, 3);
-      const minRevenue = Math.max(enhancedRevenue, inventoryStats.totalValue * 0.1);
+      const minRevenue = Math.max(enhancedRevenue, inventoryValue * 0.1);
       const minProfit = Math.max(enhancedProfit, minRevenue * 0.15); // Minimum 15% profit margin
       
       console.log('💰 Revenue:', minRevenue, 'Profit:', minProfit, 'Profit Margin:', minRevenue > 0 ? ((minProfit / minRevenue) * 100).toFixed(1) + '%' : 'N/A');
@@ -210,23 +213,23 @@ const HomeScreen: React.FC = () => {
         risk_category: currentShopkeeper?.risk_category || 'Good',
       };
     }
-  };
+  }, [operations, inventory, currentShopkeeper]);
 
   // Calculate inventory statistics
-  const inventoryStats = {
+  const inventoryStats = useMemo(() => ({
     totalItems: inventory.length,
     totalValue: inventory.reduce((sum, item) => sum + (item.price * (item.quantity || 0)), 0),
     lowStockItems: inventory.filter(item => (item.quantity || 0) < 10).length,
     totalQuantity: inventory.reduce((sum, item) => sum + (item.quantity || 0), 0)
-  };
+  }), [inventory]);
 
   // Calculate recent activity
-  const recentOperations = operations.slice(0, 5); // Last 5 operations
-  const todayOperations = operations.filter(op => {
+  const recentOperations = useMemo(() => operations.slice(0, 5), [operations]); // Last 5 operations
+  const todayOperations = useMemo(() => operations.filter(op => {
     const opDate = new Date(op.timestamp);
     const today = new Date();
     return opDate.toDateString() === today.toDateString();
-  });
+  }), [operations]);
 
   // Handle error display
   useEffect(() => {
@@ -260,19 +263,18 @@ const HomeScreen: React.FC = () => {
   // Recalculate credit score when operations or inventory changes
   useEffect(() => {
     calculateDynamicCreditScore();
-  }, [operations, inventory]); // Recalculate when operations or inventory changes
+  }, [operations, inventory]);
 
   // Initial data load
   useEffect(() => {
     fetchShopkeepers();
-    calculateDynamicCreditScore();
-  }, []); // Only run once on mount
+  }, [fetchShopkeepers]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       await fetchShopkeepers();
-      calculateDynamicCreditScore();
+      // calculateDynamicCreditScore will be called automatically by useEffect when operations/inventory change
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
@@ -511,12 +513,13 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
+    backgroundColor: '#448BEF',
   },
   headerContent: {
     flexDirection: 'row',
@@ -593,7 +596,7 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -606,7 +609,7 @@ const styles = StyleSheet.create({
   actionsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
   },
   actionButtons: {
@@ -615,7 +618,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -636,11 +639,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#EAF3FF',
     padding: 16,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#FF9800',
+    borderColor: '#44D3EF',
     borderRadius: 12,
   },
   alertContent: {
@@ -650,7 +653,7 @@ const styles = StyleSheet.create({
   },
   alertText: {
     fontSize: 14,
-    color: '#333',
+    color: '#212121',
     marginLeft: 8,
     flex: 1,
   },
@@ -658,7 +661,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: '#FF9800',
+    backgroundColor: '#44D3EF',
   },
   alertButtonText: {
     color: '#fff',

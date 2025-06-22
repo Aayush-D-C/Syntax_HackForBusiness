@@ -52,7 +52,7 @@ export default function AddShopkeeperScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
+      <LinearGradient colors={['#448BEF', '#6B44EF']} style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
@@ -171,13 +171,14 @@ export default function AddShopkeeperScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   header: {
     padding: 20,
     paddingTop: 50,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
   backButton: {
     position: 'absolute',
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 20,
   },
   inputGroup: {
@@ -222,20 +223,21 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    color: '#333',
+    color: '#212121',
     marginBottom: 8,
     fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
+    color: '#212121',
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#448BEF',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

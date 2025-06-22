@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     height: 80,
     backgroundColor: '#fff',
     elevation: 12,
-    borderTopColor: '#ddd',
+    borderTopColor: '#44D3EF',
     borderTopWidth: 1,
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -84,12 +84,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     marginTop: 2,
+    color: '#212121',
   },
   centerButton: {
     position: 'absolute',
     bottom: 15,
     alignSelf: 'center',
-    backgroundColor: '#6200ee',
+    backgroundColor: '#448BEF',
     padding: 18,
     borderRadius: 35,
     elevation: 6,

@@ -11,10 +11,12 @@ export default function AddItemScanner() {
   const [scanned, setScanned] = useState(false);
   const { setScanData } = useScan();
   const [scanLinePosition] = useState(new Animated.Value(0));
+  const [isScanning, setIsScanning] = useState(false);
 
   useEffect(() => {
     // Animate scan line
     const animateScanLine = () => {
+      setIsScanning(true);
       Animated.sequence([
         Animated.timing(scanLinePosition, {
           toValue: 1,
@@ -33,6 +35,7 @@ export default function AddItemScanner() {
 
     return () => {
       setScanned(false);
+      setIsScanning(false);
     };
   }, [scanLinePosition]);
 
@@ -92,18 +95,41 @@ export default function AddItemScanner() {
       
       {/* Overlay positioned absolutely */}
       <View style={styles.overlay}>
-        <View style={styles.scanFrame}>
+        <View style={[
+          styles.scanFrame,
+          { 
+            borderColor: isScanning ? '#00FF00' : '#448BEF',
+            shadowColor: isScanning ? '#00FF00' : '#448BEF'
+          }
+        ]}>
           {/* Corner indicators */}
-          <View style={[styles.corner, styles.topLeft]} />
-          <View style={[styles.corner, styles.topRight]} />
-          <View style={[styles.corner, styles.bottomLeft]} />
-          <View style={[styles.corner, styles.bottomRight]} />
+          <View style={[
+            styles.corner, 
+            styles.topLeft, 
+            { borderColor: isScanning ? '#00FF00' : '#448BEF' }
+          ]} />
+          <View style={[
+            styles.corner, 
+            styles.topRight, 
+            { borderColor: isScanning ? '#00FF00' : '#448BEF' }
+          ]} />
+          <View style={[
+            styles.corner, 
+            styles.bottomLeft, 
+            { borderColor: isScanning ? '#00FF00' : '#448BEF' }
+          ]} />
+          <View style={[
+            styles.corner, 
+            styles.bottomRight, 
+            { borderColor: isScanning ? '#00FF00' : '#448BEF' }
+          ]} />
           
           {/* Animated scan line */}
           <Animated.View
             style={[
               styles.scanLine,
               {
+                backgroundColor: isScanning ? '#00FF00' : '#448BEF',
                 transform: [{
                   translateY: scanLinePosition.interpolate({
                     inputRange: [0, 1],
@@ -115,7 +141,7 @@ export default function AddItemScanner() {
           />
         </View>
         <Text style={styles.scanText}>Scan barcode to ADD to inventory</Text>
-        <Text style={styles.scanSubtext}>This will open the add item form</Text>
+        <Text style={styles.scanSubtext}>This will open the add item from scanner</Text>
       </View>
 
       <View style={styles.controls}>
@@ -139,34 +165,36 @@ export default function AddItemScanner() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: '#EAF3FF',
   },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  header: {
     padding: 20,
-    backgroundColor: 'black',
+    paddingTop: 50,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
-  permissionText: {
-    color: 'white',
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 20,
+  },
+  headerSubtitle: {
     fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
+    color: '#fff',
+    opacity: 0.8,
+    marginTop: 5,
   },
-  permissionButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-  },
-  permissionButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+  cameraContainer: {
+    flex: 1,
+    position: 'relative',
   },
   camera: {
     flex: 1,
@@ -177,19 +205,18 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingTop: 100,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   scanFrame: {
     width: 280,
     height: 180,
     borderWidth: 3,
-    borderColor: '#007AFF',
+    borderColor: '#448BEF',
     backgroundColor: 'transparent',
     borderRadius: 10,
-    shadowColor: '#007AFF',
+    shadowColor: '#448BEF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
@@ -219,17 +246,13 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 20,
+    bottom: 50,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 10,
-  },
-  backButton: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 15,
-    borderRadius: 50,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 40,
   },
   controlButton: {
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -255,7 +278,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 20,
     height: 20,
-    borderColor: '#007AFF',
+    borderColor: '#448BEF',
     borderWidth: 3,
   },
   topLeft: {
@@ -288,6 +311,33 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 20,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'black',
+  },
+  permissionText: {
+    color: 'white',
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  permissionButton: {
+    backgroundColor: '#448BEF',
+    padding: 15,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

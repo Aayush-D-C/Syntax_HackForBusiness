@@ -22,7 +22,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ operation }) => {
         <Ionicons 
           name={isAdd ? "add-circle" : "remove-circle"} 
           size={24} 
-          color={isAdd ? "#4CAF50" : "#F44336"} 
+          color={isAdd ? "#448BEF" : "#6B44EF"} 
         />
       </View>
       
@@ -79,12 +79,12 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   header: {
     padding: 20,
     paddingTop: 50,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
   },
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 4,
   },
   operationInfo: {
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
   },
   emptyContainer: {
     flex: 1,

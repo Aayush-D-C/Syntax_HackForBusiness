@@ -19,7 +19,7 @@ export default function ShopkeeperDetailScreen() {
   if (loading && !currentShopkeeper) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#448BEF" />
         <Text style={styles.loadingText}>Loading shopkeeper details...</Text>
       </View>
     );
@@ -39,7 +39,7 @@ export default function ShopkeeperDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
+      <LinearGradient colors={['#448BEF', '#6B44EF']} style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
@@ -69,13 +69,13 @@ export default function ShopkeeperDetailScreen() {
           <Text style={styles.sectionTitle}>Financial Metrics</Text>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Credit Score:</Text>
-            <Text style={[styles.infoValue, { color: currentShopkeeper.credit_score >= 80 ? '#4CAF50' : currentShopkeeper.credit_score >= 60 ? '#FFC107' : '#F44336' }]}>
+            <Text style={[styles.infoValue, { color: currentShopkeeper.credit_score >= 80 ? '#448BEF' : currentShopkeeper.credit_score >= 60 ? '#44D3EF' : '#6B44EF' }]}>
               {currentShopkeeper.credit_score}
             </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Risk Category:</Text>
-            <Text style={[styles.infoValue, { color: currentShopkeeper.risk_category === 'High Risk' ? '#F44336' : currentShopkeeper.risk_category === 'Excellent' ? '#4CAF50' : '#FFC107' }]}>
+            <Text style={[styles.infoValue, { color: currentShopkeeper.risk_category === 'High Risk' ? '#F44336' : currentShopkeeper.risk_category === 'Excellent' ? '#448BEF' : '#44D3EF' }]}>
               {currentShopkeeper.risk_category}
             </Text>
           </View>
@@ -124,13 +124,13 @@ export default function ShopkeeperDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   loadingText: {
     marginTop: 16,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   errorText: {
     fontSize: 18,
@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
   backButton: {
     position: 'absolute',
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 15,
   },
   infoRow: {
@@ -207,13 +208,13 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 16,
-    color: '#333',
+    color: '#212121',
     fontWeight: '500',
     textAlign: 'right',
     flex: 1,
   },
   backButtonText: {
-    color: '#007AFF',
+    color: '#448BEF',
     fontSize: 16,
     fontWeight: '600',
   },

@@ -27,8 +27,8 @@ interface InventoryCardProps {
 
 const getStockStatusColor = (quantity: number): string => {
   if (quantity === 0) return '#F44336';
-  if (quantity <= 10) return '#FF9800';
-  return '#4CAF50';
+  if (quantity <= 10) return '#6B44EF';
+  return '#448BEF';
 };
 
 const InventoryCard: React.FC<InventoryCardProps> = ({
@@ -90,12 +90,12 @@ const InventoryCard: React.FC<InventoryCardProps> = ({
 
       <View style={styles.cardActions}>
         <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-          <Ionicons name="pencil" size={16} color="#007AFF" />
+          <Ionicons name="pencil" size={16} color="#448BEF" />
           <Text style={styles.actionText}>Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
-          <Ionicons name="trash" size={16} color="#F44336" />
-          <Text style={[styles.actionText, { color: '#F44336' }]}>Delete</Text>
+          <Ionicons name="trash" size={16} color="#6B44EF" />
+          <Text style={[styles.actionText, { color: '#6B44EF' }]}>Delete</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -381,7 +381,7 @@ const InventoryScreen: React.FC = () => {
                 router.push('/add-item-scanner');
               }}
             >
-              <Ionicons name="barcode-outline" size={24} color="#007AFF" />
+              <Ionicons name="barcode-outline" size={24} color="#448BEF" />
             </TouchableOpacity>
           </View>
 
@@ -407,7 +407,7 @@ const InventoryScreen: React.FC = () => {
   if (loading && inventory.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#448BEF" />
         <Text style={styles.loadingText}>Loading inventory...</Text>
       </View>
     );
@@ -438,7 +438,7 @@ const InventoryScreen: React.FC = () => {
           style={styles.filterButton}
           onPress={() => setShowFilters(true)}
         >
-          <Ionicons name="filter" size={20} color="#007AFF" />
+          <Ionicons name="filter" size={20} color="#448BEF" />
         </TouchableOpacity>
       </View>
 
@@ -522,7 +522,7 @@ const InventoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   loadingContainer: {
     flex: 1,
@@ -537,25 +537,27 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 60,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
+    marginBottom: 10,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    marginBottom: 5,
   },
   headerSubtitle: {
     fontSize: 16,
     color: '#fff',
     opacity: 0.8,
-    marginTop: 5,
   },
   searchContainer: {
-    flexDirection: 'row',
     padding: 20,
-    alignItems: 'center',
+    paddingTop: 0,
+    marginBottom: 10,
   },
   searchInputContainer: {
     flex: 1,
@@ -576,6 +578,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     fontSize: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#44D3EF',
+    color: '#212121',
   },
   filterButton: {
     padding: 12,
@@ -590,8 +596,9 @@ const styles = StyleSheet.create({
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#448BEF',
     marginHorizontal: 20,
+    marginBottom: 10,
     padding: 15,
     borderRadius: 25,
     justifyContent: 'center',
@@ -611,6 +618,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     paddingTop: 10,
+    marginBottom: 10,
   },
   summaryCard: {
     flex: 1,
@@ -636,33 +644,38 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   listContainer: {
+    flex: 1,
     padding: 20,
-    paddingTop: 10,
+    paddingTop: 0,
+    paddingBottom: 40,
+    marginTop: 0,
   },
   inventoryCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    elevation: 2,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   itemInfo: {
     flex: 1,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
+    flex: 1,
+    marginRight: 8,
   },
   itemCategory: {
     fontSize: 14,
@@ -692,29 +705,34 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
+    marginBottom: 2,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
   },
   cardActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
-    paddingTop: 10,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#EAF3FF',
   },
   actionText: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#448BEF',
     marginLeft: 4,
   },
   emptyContainer: {
@@ -749,14 +767,14 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 20,
     textAlign: 'center',
   },
   filterSectionTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
     marginBottom: 10,
   },
   filterOptions: {
@@ -768,12 +786,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#EAF3FF',
     marginRight: 10,
     marginBottom: 10,
   },
   filterOptionActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
   },
   filterOptionText: {
     fontSize: 14,
@@ -783,7 +801,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   closeModalButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -795,11 +813,13 @@ const styles = StyleSheet.create({
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
     borderRadius: 8,
     padding: 12,
     marginBottom: 15,
     fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#212121',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -817,7 +837,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#448BEF',
   },
   cancelButtonText: {
     color: '#666',

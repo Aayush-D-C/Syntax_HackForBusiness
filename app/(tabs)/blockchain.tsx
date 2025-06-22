@@ -311,7 +311,7 @@ const BlockchainScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   loadingContainer: {
     flex: 1,
@@ -327,6 +327,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
   headerTitle: {
     fontSize: 24,
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 12,
   },
   statusRow: {
@@ -380,7 +381,7 @@ const styles = StyleSheet.create({
   statusValue: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
   },
   summaryCard: {
     flex: 1,
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 12,
   },
   summaryRow: {
@@ -411,7 +412,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
   },
   actionContainer: {
     flexDirection: 'row',
@@ -420,7 +421,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     padding: 12,
     borderRadius: 8,
     flexDirection: 'row',
@@ -440,7 +441,7 @@ const styles = StyleSheet.create({
   blocksTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
   },
   blockCard: {
@@ -456,6 +457,7 @@ const styles = StyleSheet.create({
   },
   blockHeader: {
     padding: 12,
+    backgroundColor: '#6B44EF',
   },
   blockIndex: {
     fontSize: 16,
@@ -483,7 +485,7 @@ const styles = StyleSheet.create({
   blockValue: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
     flex: 2,
   },
   emptyContainer: {
@@ -505,16 +507,16 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#44D3EF',
   },
   pendingText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
   },
   processButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',

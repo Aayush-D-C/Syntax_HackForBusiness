@@ -104,17 +104,17 @@ const CircularProgress: React.FC<{ score: number; size?: number }> = ({ score, s
 };
 
 const getCreditScoreColor = (score: number): string => {
-  if (score >= 80) return '#4CAF50';
-  if (score >= 60) return '#8BC34A';
-  if (score >= 40) return '#FFC107';
+  if (score >= 80) return '#448BEF';
+  if (score >= 60) return '#44D3EF';
+  if (score >= 40) return '#6B44EF';
   return '#F44336';
 };
 
 const getRiskCategoryColor = (category: string): string => {
   switch (category.toLowerCase()) {
-    case 'excellent': return '#4CAF50';
-    case 'good': return '#8BC34A';
-    case 'fair': return '#FFC107';
+    case 'excellent': return '#448BEF';
+    case 'good': return '#44D3EF';
+    case 'fair': return '#6B44EF';
     case 'moderate risk': return '#FF9800';
     case 'high risk': return '#F44336';
     default: return '#9E9E9E';
@@ -133,7 +133,26 @@ export default function CreditAnalysisScreen() {
     data: CreditScoreData;
   } | null>(null);
 
-  // Calculate dynamic credit score data
+  // TEMPORARILY DISABLED TO FIX INFINITE RE-RENDER
+  /*
+  useEffect(() => {
+    calculateDynamicCreditData();
+  }, [operations, inventory]); // Recalculate when operations or inventory changes
+  */
+  
+  // Simple initialization without circular dependencies
+  useEffect(() => {
+    calculateDynamicCreditData();
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error, [
+        { text: 'OK', onPress: clearError }
+      ]);
+    }
+  }, [error, clearError]);
+
   const calculateDynamicCreditData = () => {
     try {
       // Calculate business metrics from inventory operations
@@ -236,18 +255,6 @@ export default function CreditAnalysisScreen() {
       return null;
     }
   };
-
-  useEffect(() => {
-    calculateDynamicCreditData();
-  }, [operations, inventory]); // Recalculate when operations or inventory changes
-
-  useEffect(() => {
-    if (error) {
-      Alert.alert('Error', error, [
-        { text: 'OK', onPress: clearError }
-      ]);
-    }
-  }, [error, clearError]);
 
   const getCreditScoreData = () => {
     // Generate weekly credit score trend based on daily operations
@@ -387,7 +394,7 @@ export default function CreditAnalysisScreen() {
         {
           name: 'On Time',
           population: onTime,
-          color: '#4CAF50',
+          color: '#448BEF',
           legendFontColor: '#7F7F7F',
           legendFontSize: 12,
         },
@@ -415,7 +422,7 @@ export default function CreditAnalysisScreen() {
       {
         name: 'On Time',
         population: onTime,
-        color: '#4CAF50',
+        color: '#448BEF',
         legendFontColor: '#7F7F7F',
         legendFontSize: 12,
       },
@@ -634,7 +641,7 @@ export default function CreditAnalysisScreen() {
     <ScrollView style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#667eea', '#764ba2']}
+        colors={['#448BEF', '#6B44EF']}
         style={styles.header}
       >
         <View style={styles.headerContent}>
@@ -680,19 +687,19 @@ export default function CreditAnalysisScreen() {
             title="Transactions"
             value={dynamicCreditData?.data.transactions || currentShopkeeper?.transactions_per_month || 0}
             icon="swap-horizontal"
-            color="#4CAF50"
+            color="#448BEF"
             subtitle="Last 30 days"
           />
           <CreditMetric
             title="Revenue"
-            value={`$${(dynamicCreditData?.data.revenue || currentShopkeeper?.monthly_revenue_avg || 0).toLocaleString()}`}
+            value={`NPR ${(dynamicCreditData?.data.revenue || currentShopkeeper?.monthly_revenue_avg || 0).toLocaleString()}`}
             icon="trending-up"
             color="#2196F3"
             subtitle="Monthly average"
           />
           <CreditMetric
             title="Profit"
-            value={`$${(dynamicCreditData?.data.profit || currentShopkeeper?.monthly_profit_avg || 0).toLocaleString()}`}
+            value={`NPR ${(dynamicCreditData?.data.profit || currentShopkeeper?.monthly_profit_avg || 0).toLocaleString()}`}
             icon="cash"
             color="#FF9800"
             subtitle="Monthly average"
@@ -781,7 +788,7 @@ export default function CreditAnalysisScreen() {
               </View>
               <View style={styles.trendStat}>
                 <Text style={styles.trendLabel}>Trend</Text>
-                <Text style={[styles.trendValue, { color: '#4CAF50' }]}>
+                <Text style={[styles.trendValue, { color: '#448BEF' }]}>
                   {(() => {
                     const scores = getCreditScoreData().datasets[0].data;
                     const firstHalf = scores.slice(0, 3).reduce((sum, score) => sum + score, 0) / 3;
@@ -806,6 +813,8 @@ export default function CreditAnalysisScreen() {
             chartConfig={barChartConfig}
             style={styles.chart}
             showValuesOnTopOfBars
+            yAxisLabel=""
+            yAxisSuffix=""
           />
         </View>
       )}
@@ -882,7 +891,7 @@ export default function CreditAnalysisScreen() {
           <Text style={styles.analysisTitle}>Strengths</Text>
           {getStrengths().map((strength, index) => (
             <View key={index} style={styles.analysisItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+              <Ionicons name="checkmark-circle" size={16} color="#448BEF" />
               <Text style={styles.analysisText}>{strength}</Text>
             </View>
           ))}
@@ -934,13 +943,14 @@ export default function CreditAnalysisScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   header: {
     padding: 20,
     paddingTop: 60,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
   headerContent: {
     flexDirection: 'row',
@@ -1019,7 +1029,7 @@ const styles = StyleSheet.create({
   riskCategory: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 8,
   },
   scoreDescription: {
@@ -1033,7 +1043,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
   },
   metricsGrid: {
@@ -1086,7 +1096,7 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#212121',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -1116,7 +1126,7 @@ const styles = StyleSheet.create({
   analysisTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 12,
   },
   analysisItem: {
@@ -1126,7 +1136,7 @@ const styles = StyleSheet.create({
   },
   analysisText: {
     fontSize: 14,
-    color: '#333',
+    color: '#212121',
     marginLeft: 8,
     flex: 1,
   },
@@ -1137,7 +1147,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   actionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1193,7 +1203,7 @@ const styles = StyleSheet.create({
   breakdownCategory: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 8,
   },
   breakdownScoreContainer: {
@@ -1213,15 +1223,15 @@ const styles = StyleSheet.create({
   trendAnalysis: {
     marginTop: 16,
     padding: 20,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#EAF3FF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#44D3EF',
   },
   trendTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#212121',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -1249,7 +1259,7 @@ const styles = StyleSheet.create({
   },
   trendValue: {
     fontSize: 16,
-    color: '#1f2937',
+    color: '#212121',
     fontWeight: '700',
   },
 });

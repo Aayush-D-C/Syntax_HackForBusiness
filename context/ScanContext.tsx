@@ -188,6 +188,9 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
   };
 
   const removeFromInventory = (barcode: string, quantity: number) => {
+    // Get product before updating state to avoid stale closure
+    const product = getProductByBarcode(barcode);
+    
     setInventory(prev => {
       const existingIndex = prev.findIndex(item => item.barcode === barcode);
       
@@ -212,11 +215,8 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
     });
     
     // Record sale on blockchain if removing items
-    if (quantity > 0) {
-      const product = getProductByBarcode(barcode);
-      if (product) {
-        recordSaleOnBlockchain(product, quantity);
-      }
+    if (quantity > 0 && product) {
+      recordSaleOnBlockchain(product, quantity);
     }
     
     // Save to AsyncStorage

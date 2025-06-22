@@ -223,13 +223,14 @@ export default function CreditScoreCalculator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   header: {
     padding: 20,
     paddingTop: 60,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    backgroundColor: '#448BEF',
   },
   backButton: {
     position: 'absolute',
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
   },
   inputContainer: {
@@ -265,7 +266,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#212121',
     marginBottom: 8,
   },
   textInput: {
@@ -273,9 +274,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
     fontSize: 16,
-    color: '#333',
+    color: '#212121',
   },
   buttonContainer: {
     marginTop: 20,
@@ -286,15 +287,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#EAF3FF',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
   },
   sampleButtonText: {
     marginLeft: 8,
     fontSize: 16,
-    color: '#667eea',
+    color: '#448BEF',
     fontWeight: '500',
   },
   calculateButton: {
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    backgroundColor: '#667eea',
+    backgroundColor: '#448BEF',
     borderRadius: 8,
   },
   calculateButtonDisabled: {
@@ -372,7 +373,7 @@ const styles = StyleSheet.create({
   },
   recommendationText: {
     fontSize: 14,
-    color: '#333',
+    color: '#212121',
     marginLeft: 8,
     flex: 1,
   },

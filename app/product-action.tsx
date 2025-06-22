@@ -188,7 +188,7 @@ export default function ProductActionScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+            <Ionicons name="arrow-back" size={24} color="#448BEF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Product Not Found</Text>
         </View>
@@ -291,7 +291,7 @@ export default function ProductActionScreen() {
                 if (current > 1) setQuantity((current - 1).toString());
               }}
             >
-              <Ionicons name="remove" size={20} color="#007AFF" />
+              <Ionicons name="remove" size={20} color="#448BEF" />
             </TouchableOpacity>
             
             <TextInput
@@ -309,7 +309,7 @@ export default function ProductActionScreen() {
                 setQuantity((current + 1).toString());
               }}
             >
-              <Ionicons name="add" size={20} color="#007AFF" />
+              <Ionicons name="add" size={20} color="#448BEF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -336,15 +336,15 @@ export default function ProductActionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EAF3FF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#44D3EF',
   },
   backButton: {
     marginRight: 16,
@@ -352,14 +352,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
   },
   content: {
     flex: 1,
     padding: 16,
   },
   barcodeSection: {
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
@@ -372,11 +372,11 @@ const styles = StyleSheet.create({
   barcodeText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     fontFamily: 'monospace',
   },
   detailsSection: {
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#212121',
     marginBottom: 16,
   },
   inputGroup: {
@@ -397,18 +397,19 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
     borderRadius: 6,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#fff',
+    color: '#212121',
   },
   currentStock: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#EAF3FF',
     borderRadius: 6,
   },
   currentStockLabel: {
@@ -418,10 +419,10 @@ const styles = StyleSheet.create({
   currentStockValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#448BEF',
   },
   quantitySection: {
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
@@ -435,7 +436,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#EAF3FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -444,16 +445,18 @@ const styles = StyleSheet.create({
     height: 40,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#44D3EF',
     borderRadius: 6,
     fontSize: 16,
     fontWeight: '600',
+    backgroundColor: '#fff',
+    color: '#212121',
   },
   actionButtons: {
     marginTop: 16,
   },
   addButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#448BEF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -461,7 +464,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   removeButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#6B44EF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -475,7 +478,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#448BEF',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

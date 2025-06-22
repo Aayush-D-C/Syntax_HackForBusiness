@@ -152,50 +152,52 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const addSaleToBlockchain = useCallback((sale: PendingSale) => {
     // Create a new block with the sale data
-    const newBlockIndex = blockchainData.chain.length;
-    const newBlock: BlockData = {
-      index: newBlockIndex,
-      hash: `000${newBlockIndex}mnop...`,
-      previousHash: blockchainData.chain[blockchainData.chain.length - 1].hash,
-      nonce: Math.floor(Math.random() * 10000),
-      timestamp: new Date().toISOString(),
-      transaction: {
-        txid: `tx-${String(newBlockIndex).padStart(3, '0')}`,
-        storeId: sale.storeId,
-        total: sale.total,
-        timestamp: sale.timestamp,
-        products: sale.products
-      }
-    };
+    setBlockchainData(prevData => {
+      const newBlockIndex = prevData.chain.length;
+      const newBlock: BlockData = {
+        index: newBlockIndex,
+        hash: `000${newBlockIndex}mnop...`,
+        previousHash: prevData.chain[prevData.chain.length - 1].hash,
+        nonce: Math.floor(Math.random() * 10000),
+        timestamp: new Date().toISOString(),
+        transaction: {
+          txid: `tx-${String(newBlockIndex).padStart(3, '0')}`,
+          storeId: sale.storeId,
+          total: sale.total,
+          timestamp: sale.timestamp,
+          products: sale.products
+        }
+      };
 
-    // Update blockchain data
-    const updatedChain = [...blockchainData.chain, newBlock];
-    const newTotalSales = blockchainData.summary.totalSales + sale.products.length;
-    const newTotalRevenue = blockchainData.summary.totalRevenue + sale.total;
-    const newTransactions = blockchainData.summary.transactions + 1;
+      // Update blockchain data
+      const updatedChain = [...prevData.chain, newBlock];
+      const newTotalSales = prevData.summary.totalSales + sale.products.length;
+      const newTotalRevenue = prevData.summary.totalRevenue + sale.total;
+      const newTransactions = prevData.summary.transactions + 1;
 
-    const updatedBlockchainData = {
-      ...blockchainData,
-      chain: updatedChain,
-      totalBlocks: updatedChain.length,
-      summary: {
-        ...blockchainData.summary,
-        totalSales: newTotalSales,
-        totalRevenue: newTotalRevenue,
-        transactions: newTransactions,
-        storeSales: {
-          ...blockchainData.summary.storeSales,
-          [sale.storeId]: {
-            salesCount: (blockchainData.summary.storeSales[sale.storeId as keyof typeof blockchainData.summary.storeSales]?.salesCount || 0) + sale.products.length,
-            revenue: (blockchainData.summary.storeSales[sale.storeId as keyof typeof blockchainData.summary.storeSales]?.revenue || 0) + sale.total
+      const updatedBlockchainData = {
+        ...prevData,
+        chain: updatedChain,
+        totalBlocks: updatedChain.length,
+        summary: {
+          ...prevData.summary,
+          totalSales: newTotalSales,
+          totalRevenue: newTotalRevenue,
+          transactions: newTransactions,
+          storeSales: {
+            ...prevData.summary.storeSales,
+            [sale.storeId]: {
+              salesCount: (prevData.summary.storeSales[sale.storeId as keyof typeof prevData.summary.storeSales]?.salesCount || 0) + sale.products.length,
+              revenue: (prevData.summary.storeSales[sale.storeId as keyof typeof prevData.summary.storeSales]?.revenue || 0) + sale.total
+            }
           }
         }
-      }
-    };
+      };
 
-    setBlockchainData(updatedBlockchainData);
-    console.log('Sale added to blockchain:', sale);
-  }, [blockchainData]);
+      console.log('Sale added to blockchain:', sale);
+      return updatedBlockchainData;
+    });
+  }, []);
 
   const processPendingSales = useCallback(async () => {
     if (pendingSales.length === 0) return;
