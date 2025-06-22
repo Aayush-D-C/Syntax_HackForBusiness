@@ -1,5 +1,5 @@
 // context/DataContext.tsx
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { AggregatedShopkeeper, apiService, CreditReport } from '../services/apiService';
 
 interface DataState {
@@ -149,10 +149,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       const shopkeepers = await apiService.getShopkeepers();
       dispatch({ type: 'SET_SHOPKEEPERS', payload: shopkeepers });
-    } catch (error) {
-      handleError(error);
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [handleError]);
+  }, []);
 
   const fetchShopkeeperById = useCallback(async (id: string) => {
     try {
@@ -161,10 +165,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       const shopkeeper = await apiService.getShopkeeperById(id);
       dispatch({ type: 'SET_CURRENT_SHOPKEEPER', payload: shopkeeper });
-    } catch (error) {
-      handleError(error);
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [handleError]);
+  }, []);
 
   const addShopkeeper = useCallback(async (data: any) => {
     try {
@@ -172,12 +180,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       dispatch({ type: 'SET_ERROR', payload: null });
       
       await apiService.addShopkeeperData(data);
-      // Refresh the list after adding
-      await fetchShopkeepers();
-    } catch (error) {
-      handleError(error);
+      // Refresh the list after adding by dispatching directly
+      const shopkeepers = await apiService.getShopkeepers();
+      dispatch({ type: 'SET_SHOPKEEPERS', payload: shopkeepers });
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [fetchShopkeepers, handleError]);
+  }, []);
 
   const updateShopkeeper = useCallback(async (id: string, data: any) => {
     try {
@@ -188,10 +201,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Fetch updated data
       const updatedShopkeeper = await apiService.getShopkeeperById(id);
       dispatch({ type: 'UPDATE_SHOPKEEPER', payload: updatedShopkeeper });
-    } catch (error) {
-      handleError(error);
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [handleError]);
+  }, []);
 
   const deleteShopkeeper = useCallback(async (id: string) => {
     try {
@@ -200,10 +217,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       await apiService.deleteShopkeeper(id);
       dispatch({ type: 'REMOVE_SHOPKEEPER', payload: id });
-    } catch (error) {
-      handleError(error);
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [handleError]);
+  }, []);
 
   const setCurrentShopkeeper = useCallback((shopkeeper: AggregatedShopkeeper | null) => {
     dispatch({ type: 'SET_CURRENT_SHOPKEEPER', payload: shopkeeper });
@@ -219,10 +240,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         type: 'SET_CREDIT_REPORT', 
         payload: { id: shopkeeperId, report } 
       });
-    } catch (error) {
-      handleError(error);
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [handleError]);
+  }, []);
 
   const recalculateCreditScores = useCallback(async () => {
     try {
@@ -230,12 +255,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       dispatch({ type: 'SET_ERROR', payload: null });
       
       await apiService.recalculateCreditScores();
-      // Refresh shopkeepers data after recalculation
-      await fetchShopkeepers();
-    } catch (error) {
-      handleError(error);
+      // Refresh shopkeepers data after recalculation by dispatching directly
+      const shopkeepers = await apiService.getShopkeepers();
+      dispatch({ type: 'SET_SHOPKEEPERS', payload: shopkeepers });
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [fetchShopkeepers, handleError]);
+  }, []);
 
   const fetchDashboardStats = useCallback(async () => {
     try {
@@ -244,34 +274,40 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       const stats = await apiService.getDashboardStats();
       dispatch({ type: 'SET_DASHBOARD_STATS', payload: stats });
-    } catch (error) {
-      handleError(error);
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [handleError]);
+  }, []);
 
   const clearError = useCallback(() => {
     dispatch({ type: 'SET_ERROR', payload: null });
   }, []);
 
   const refreshData = useCallback(async () => {
-    await Promise.all([
-      fetchShopkeepers(),
-      fetchDashboardStats()
-    ]);
-  }, [fetchShopkeepers, fetchDashboardStats]);
-
-  // Initialize data on mount - only run once and only if not already loaded
-  // TEMPORARILY DISABLED TO FIX INFINITE RE-RENDER
-  /*
-  useEffect(() => {
-    if (!isDataLoaded) {
-      console.log('Loading initial data...');
-      refreshData();
-      setIsDataLoaded(true);
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
+      
+      const [shopkeepers, stats] = await Promise.all([
+        apiService.getShopkeepers(),
+        apiService.getDashboardStats()
+      ]);
+      
+      dispatch({ type: 'SET_SHOPKEEPERS', payload: shopkeepers });
+      dispatch({ type: 'SET_DASHBOARD_STATS', payload: stats });
+    } catch (error: any) {
+      console.error('API Error:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message || 'An unexpected error occurred' 
+      });
     }
-  }, [isDataLoaded, refreshData]);
-  */
-  
+  }, []);
+
   // Simple initialization without circular dependencies
   useEffect(() => {
     if (!isDataLoaded) {
@@ -288,7 +324,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           dispatch({ type: 'SET_SHOPKEEPERS', payload: shopkeepers });
           dispatch({ type: 'SET_DASHBOARD_STATS', payload: stats });
-        } catch (error) {
+        } catch (error: any) {
           console.error('API Error:', error);
           dispatch({ 
             type: 'SET_ERROR', 
@@ -299,9 +335,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       loadInitialData();
       setIsDataLoaded(true);
     }
-  }, [isDataLoaded]);
+  }, []); // Remove isDataLoaded dependency to prevent infinite loops
 
-  const contextValue: DataContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue: DataContextType = useMemo(() => ({
     ...state,
     fetchShopkeepers,
     fetchShopkeeperById,
@@ -314,7 +351,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     fetchDashboardStats,
     clearError,
     refreshData,
-  };
+  }), [
+    state,
+    fetchShopkeepers,
+    fetchShopkeeperById,
+    addShopkeeper,
+    updateShopkeeper,
+    deleteShopkeeper,
+    setCurrentShopkeeper,
+    fetchCreditReport,
+    recalculateCreditScores,
+    fetchDashboardStats,
+    clearError,
+    refreshData,
+  ]);
 
   return (
     <DataContext.Provider value={contextValue}>

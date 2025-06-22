@@ -133,16 +133,12 @@ export default function CreditAnalysisScreen() {
     data: CreditScoreData;
   } | null>(null);
 
-  // TEMPORARILY DISABLED TO FIX INFINITE RE-RENDER
-  /*
-  useEffect(() => {
-    calculateDynamicCreditData();
-  }, [operations, inventory]); // Recalculate when operations or inventory changes
-  */
-  
   // Simple initialization without circular dependencies
   useEffect(() => {
-    calculateDynamicCreditData();
+    // Only calculate once on mount to prevent infinite loops
+    if (operations.length > 0 || inventory.length > 0) {
+      calculateDynamicCreditData();
+    }
   }, []); // Only run once on mount
 
   useEffect(() => {

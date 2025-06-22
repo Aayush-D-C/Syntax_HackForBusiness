@@ -1,4 +1,4 @@
-# Shopkeeper Business Management System
+# BizSathi - Shopkeeper Business Management System
 
 A comprehensive React Native Expo application with Node.js backend and Python AI services for shopkeeper business management, featuring credit scoring, inventory management, blockchain sales records, and predictive analytics.
 
@@ -22,54 +22,69 @@ A comprehensive React Native Expo application with Node.js backend and Python AI
 ## 📱 Features
 
 ### 🔐 Authentication
-- Login/logout system
+- Login/logout system with JWT tokens
 - Mock authentication (any username/password works)
-- Session management
+- Session management with AsyncStorage
+- Auto-login with token persistence
 
 ### 📊 Dashboard
-- Business statistics overview
-- Revenue tracking
-- Inventory status
-- Credit score display
+- **Dynamic Credit Score**: Real-time calculation based on business performance
+- **Inventory Value**: Live stock valuation with profit margins
+- **Today's Activity**: Daily operations summary
+- **AI Predictions**: Next month profit/revenue forecasts
+- **Low Stock Alerts**: Automatic notifications for low inventory
+- **Weekly Trends**: Credit score progression over 7 days
 
 ### 🏪 Shopkeeper Management
-- Add new shopkeepers
-- Edit shopkeeper details
-- View shopkeeper profiles
-- Credit scoring integration
+- Add new shopkeepers with business details
+- Edit shopkeeper information
+- View shopkeeper profiles and credit history
+- Credit scoring integration with risk assessment
 
 ### 📦 Inventory Management
-- Barcode scanning for product removal
-- Manual product addition
-- Stock tracking
-- Product history
+- **Barcode Scanning**: Add/remove products with camera
+- **Manual Entry**: Add products with detailed information
+- **Stock Tracking**: Real-time quantity and value monitoring
+- **Profit Margins**: Cost price and profit calculation
+- **Search & Filter**: Find items by name, category, or stock level
+- **Bulk Operations**: Add multiple items efficiently
 
 ### 🔍 Credit Scoring
-- CSV data upload and processing
-- Dynamic credit score calculation
-- Historical credit data
-- Risk assessment
+- **Dynamic Calculation**: Based on actual business operations
+- **Score Breakdown**: Transaction volume, payment reliability, profit margins
+- **Risk Assessment**: Categorized levels (Excellent, Good, Fair, Moderate Risk, High Risk)
+- **Weekly Analysis**: 7-day credit score trends
+- **Recommendations**: AI-powered business improvement suggestions
 
 ### 🔗 Blockchain Integration
-- Sales record blockchain
-- Immutable transaction history
-- Block mining simulation
-- Transaction verification
+- **Automatic Sales Recording**: Every sale added to blockchain
+- **Immutable Transaction History**: Complete sales ledger
+- **Chain Verification**: Validate blockchain integrity
+- **Store Analytics**: Per-store performance metrics
+- **Real-time Updates**: Live blockchain data
 
 ### 📈 Predictive Analytics
-- Sales predictions
-- Inventory forecasting
-- Business insights
+- **Sales Predictions**: AI-powered revenue forecasting
+- **Inventory Forecasting**: Stock level predictions
+- **Business Insights**: Growth probability assessment
+- **Trend Analysis**: Historical performance patterns
 
 ### 📷 Barcode Scanner
-- Real-time product scanning
-- Product removal workflow
-- Visual scanning interface
+- **Visual Feedback**: Blue border when ready, green when scanning
+- **Centered Interface**: Optimized scanning experience
+- **Auto-navigation**: Directs to product action forms
+- **Dual Mode**: Add items and remove items (sales)
+
+### 🎨 Modern UI/UX
+- **Color Palette**: Professional blue theme (#448BEF, #44D3EF, #6B44EF)
+- **Responsive Design**: Optimized for mobile devices
+- **Intuitive Navigation**: Bottom tab navigation with clear icons
+- **Visual Feedback**: Color-coded status indicators
 
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - Python (v3.8 or higher)
 - Expo CLI
 - Android Studio (for Android development)
@@ -78,9 +93,9 @@ A comprehensive React Native Expo application with Node.js backend and Python AI
 ### 1. Install Dependencies
 
 #### Frontend (React Native)
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 #### Backend (Node.js)
 ```bash
@@ -111,15 +126,16 @@ npm start
 **Expected Output:** `Server running on port 3001`
 
 #### Terminal 3: React Native App
-   ```bash
-   npx expo start
-   ```
+```bash
+npx expo start
+```
 **Expected Output:** Expo development server starts
 
 ### 3. Access the Application
-- Scan QR code with Expo Go app (mobile)
-- Press 'a' for Android emulator
-- Press 'i' for iOS simulator
+- **Mobile**: Scan QR code with Expo Go app
+- **Android Emulator**: Press 'a' in terminal
+- **iOS Simulator**: Press 'i' in terminal (Mac only)
+- **Web Browser**: Press 'w' in terminal
 
 ## 📁 Project Structure
 
@@ -128,7 +144,16 @@ Syntax_HackForBusiness/
 ├── app/                          # React Native screens
 │   ├── (auth)/                   # Authentication screens
 │   ├── (tabs)/                   # Main tab navigation
+│   │   ├── home.tsx             # Dashboard with dynamic credit score
+│   │   ├── stocks.tsx           # Inventory management
+│   │   ├── scanner.tsx          # Barcode scanner (remove items)
+│   │   ├── blockchain.tsx       # Blockchain verification
+│   │   ├── predict.tsx          # Credit score analysis
+│   │   └── history.tsx          # Business analytics
 │   ├── assets/                   # Images and icons
+│   ├── add-item-scanner.tsx     # Scanner for adding items
+│   ├── product-action.tsx       # Product add/remove form
+│   ├── credit-score-calculator.tsx # Credit score calculator
 │   └── welcome.tsx              # Welcome screen
 ├── backend/                      # Node.js backend
 │   ├── server.js                # Main server file
@@ -144,9 +169,11 @@ Syntax_HackForBusiness/
 ├── context/                     # React Context providers
 │   ├── AuthContext.tsx          # Authentication state
 │   ├── DataContext.tsx          # Data management
-│   └── ScanContext.tsx          # Scanner state
+│   ├── ScanContext.tsx          # Scanner and inventory state
+│   └── BlockchainContext.tsx    # Blockchain operations
 ├── services/                    # API services
-│   └── apiService.ts            # HTTP client
+│   ├── apiService.ts            # HTTP client
+│   └── creditScoreService.ts    # Credit score calculations
 └── package.json                 # Frontend dependencies
 ```
 
@@ -166,6 +193,7 @@ Syntax_HackForBusiness/
 - `GET /api/credit-scores` - Get credit scores
 - `POST /api/blockchain/add-record` - Add blockchain record
 - `GET /api/blockchain/records` - Get blockchain records
+- `GET /api/predictions/:id` - Get AI predictions
 
 #### Python AI Services (Port 5000)
 - `POST /calculate_credit_score` - Calculate credit score
@@ -178,18 +206,38 @@ PORT=3001
 PYTHON_API_URL=http://192.168.78.234:5000
 ```
 
+### App Configuration (`app.json`)
+```json
+{
+  "expo": {
+    "name": "BizSathi",
+    "slug": "BizSathi",
+    "version": "1.0.0",
+    "icon": "./app/assets/logo.png",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./app/assets/logo.png",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}
+```
+
 ## 📖 Usage Guide
 
 ### 1. Authentication
 - Open the app
 - Use any username and password (mock authentication)
 - You'll be redirected to the main dashboard
+- Session persists until logout
 
 ### 2. Dashboard
-- View business statistics
-- Monitor inventory levels
-- Check credit scores
-- Access quick actions
+- **Credit Score**: View dynamic score with risk category
+- **Inventory Value**: See total stock value and item count
+- **Today's Activity**: Monitor daily operations
+- **AI Predictions**: View next month forecasts
+- **Low Stock Alerts**: Get notified of items running low
 
 ### 3. Inventory Management
 
@@ -199,33 +247,47 @@ PYTHON_API_URL=http://192.168.78.234:5000
 3. Enter product details:
    - Product name
    - Barcode (optional)
+   - Category
    - Quantity
-   - Price
+   - Selling price
+   - Cost price (for profit calculation)
 4. Tap **Add Product**
 
-#### Removing Products (Scanning)
+#### Adding Products via Scanner
+1. Go to **Stocks** tab
+2. Tap **Scan to Add** button
+3. Point camera at product barcode
+4. Fill in product details
+5. Confirm addition
+
+#### Removing Products (Sales)
 1. Go to **Scanner** tab
 2. Point camera at product barcode
 3. Product will be automatically removed from inventory
-4. View confirmation message
+4. Sale is recorded on blockchain
+5. View confirmation message
 
-### 4. Credit Scoring
+### 4. Credit Score Analysis
 1. Go to **Credit Score** tab
-2. Upload CSV file with shopkeeper data
-3. System processes data and calculates credit scores
-4. View results and risk assessment
+2. View dynamic credit score calculation
+3. See score breakdown by factors
+4. Check weekly trend analysis
+5. Review business recommendations
+6. Access credit score calculator for manual input
 
 ### 5. Blockchain Records
 1. Go to **Blockchain** tab
-2. View all sales records
+2. View all sales records in blockchain
 3. Each record is stored in immutable blockchain
 4. Verify transaction integrity
+5. Monitor store performance metrics
 
-### 6. Shopkeeper Management
-1. Go to **Shopkeepers** tab
-2. View all shopkeepers
-3. Tap on shopkeeper to edit details
-4. Add new shopkeepers as needed
+### 6. Business Analytics
+1. Go to **History** tab
+2. View complete operation history
+3. Analyze sales patterns
+4. Track inventory changes
+5. Export data for external analysis
 
 ## 🔍 Troubleshooting
 
@@ -245,7 +307,8 @@ taskkill /PID <PID> /F
 - Ensure backend is running on port 3001
 - Ensure Python API is running on port 5000
 - Check firewall settings
-- Verify 192.168.78.234 connectivity
+- Verify network connectivity
+- Check API_BASE_URL in apiService.ts
 
 #### 3. Python Dependencies Issues
 ```bash
@@ -267,6 +330,11 @@ npx expo start --clear
 # Reset Metro bundler
 npx expo start --reset-cache
 ```
+
+#### 5. Infinite Re-render Warnings
+- Check useEffect dependencies
+- Verify context providers
+- Ensure no circular dependencies in state updates
 
 ### Testing Connections
 
@@ -310,6 +378,8 @@ node test_blockchain.js
 - Use functional components with hooks
 - Implement proper error handling
 - Add loading states for async operations
+- Use useCallback and useMemo for performance
+- Avoid circular dependencies in useEffect
 
 ## 📊 Data Models
 
@@ -322,6 +392,7 @@ interface Shopkeeper {
   phone: string;
   address: string;
   creditScore: number;
+  riskCategory: string;
   joinDate: string;
 }
 ```
@@ -332,8 +403,11 @@ interface Product {
   id: string;
   name: string;
   barcode: string;
+  category: string;
   quantity: number;
   price: number;
+  costPrice: number;
+  exists: boolean;
   addedDate: string;
 }
 ```
@@ -343,8 +417,14 @@ interface Product {
 interface CreditScore {
   shopkeeperId: string;
   score: number;
-  riskLevel: 'Low' | 'Medium' | 'High';
-  factors: string[];
+  riskLevel: 'Excellent' | 'Good' | 'Fair' | 'Moderate Risk' | 'High Risk';
+  breakdown: {
+    transactionVolume: number;
+    paymentReliability: number;
+    profitMargin: number;
+    businessLongevity: number;
+    revenueConsistency: number;
+  };
   calculatedDate: string;
 }
 ```
@@ -359,25 +439,61 @@ interface SalesRecord {
   totalAmount: number;
   timestamp: string;
   blockHash: string;
+  previousHash: string;
+}
+```
+
+### Inventory Operation
+```typescript
+interface InventoryOperation {
+  type: 'add' | 'remove';
+  product: Product;
+  quantity: number;
+  timestamp: string;
 }
 ```
 
 ## 🔒 Security Considerations
 
 ### Current Implementation
-- Mock authentication (development only)
+- JWT token-based authentication
+- Secure token storage in AsyncStorage
 - Basic input validation
 - SQLite database (local storage)
+- Error handling without data exposure
 
 ### Production Recommendations
-- Implement proper JWT authentication
-- Add input sanitization
+- Implement proper JWT authentication with refresh tokens
+- Add comprehensive input sanitization
 - Use environment variables for secrets
 - Implement rate limiting
 - Add HTTPS encryption
 - Use production database (PostgreSQL/MySQL)
+- Add API key authentication
+- Implement audit logging
 
 ## 🚀 Deployment
+
+### Building for Production
+
+#### Android APK (Easiest for testing)
+```bash
+# Login to Expo
+npx expo login
+
+# Build APK
+npx eas build --platform android --profile preview
+```
+
+#### Android AAB (Google Play Store)
+```bash
+npx eas build --platform android --profile production
+```
+
+#### iOS IPA (App Store)
+```bash
+npx eas build --platform ios --profile production
+```
 
 ### Backend Deployment
 1. Set up production server
@@ -385,27 +501,91 @@ interface SalesRecord {
 3. Configure environment variables
 4. Use PM2 for process management
 5. Set up reverse proxy (Nginx)
-
-### Frontend Deployment
-1. Build production APK/IPA
-2. Use EAS Build for Expo
-3. Configure app signing
-4. Upload to app stores
+6. Configure SSL certificates
 
 ### Python API Deployment
 1. Deploy to cloud platform (Heroku/AWS)
 2. Use Gunicorn for production
 3. Configure environment variables
-4. Set up monitoring
+4. Set up monitoring and logging
+
+### Local Network Deployment
+For local network deployment:
+1. Update API_BASE_URL to server's local IP
+2. Ensure all devices are on same network
+3. Configure firewall to allow connections
+4. Use static IP for backend server
+
+## 📈 Performance Optimization
+
+### Frontend
+- Lazy loading of components
+- Image optimization and caching
+- Memory leak prevention
+- Efficient re-renders with useMemo/useCallback
+- Bundle size optimization
+
+### Backend
+- Database indexing for queries
+- Query optimization
+- Caching strategies (Redis)
+- Connection pooling
+- Rate limiting
+
+### Database
+- Regular backups
+- Index optimization
+- Query performance monitoring
+- Data archiving for old records
+
+## 🔄 Updates & Maintenance
+
+### Regular Updates
+```bash
+# Update dependencies
+npm update
+
+# Update Expo SDK
+npx expo install --fix
+
+# Update EAS CLI
+npm install -g eas-cli@latest
+```
+
+### Database Migrations
+```bash
+# Backup current data
+# Run migration scripts
+# Verify data integrity
+# Test all functionality
+```
+
+## 📋 Production Checklist
+
+- [ ] All features tested on real devices
+- [ ] Backend deployed and accessible
+- [ ] API endpoints secured with authentication
+- [ ] Error handling implemented for all scenarios
+- [ ] Performance optimized for production
+- [ ] App store guidelines met
+- [ ] Privacy policy updated
+- [ ] Terms of service included
+- [ ] Support contact information added
+- [ ] Analytics tracking configured
+- [ ] Backup strategy implemented
+- [ ] Monitoring and alerting set up
+- [ ] Security audit completed
+- [ ] Load testing performed
 
 ## 📞 Support
 
 ### Getting Help
 1. Check this documentation
-2. Review error logs
+2. Review error logs in console
 3. Test individual components
 4. Verify network connectivity
 5. Restart all services
+6. Clear caches if needed
 
 ### Common Commands
 ```bash
@@ -421,6 +601,21 @@ taskkill /F /IM python.exe
 # Clear all caches
 npx expo start --clear
 npm cache clean --force
+
+# Build for production
+npx eas build --platform android --profile production
+```
+
+### Debug Mode
+```bash
+# Enable debug logging
+npx expo start --dev-client
+
+# View logs
+npx expo logs
+
+# Debug with React Native Debugger
+# Install and run React Native Debugger
 ```
 
 ## 📝 License
@@ -429,6 +624,7 @@ This project is developed for hackathon and business purposes. Please ensure com
 
 ---
 
-**Last Updated:** December 2024
-**Version:** 1.0.0
-**Maintainer:** Team Synatx
+**Last Updated:** December 2024  
+**Version:** 1.0.0  
+**Maintainer:** Team Syntax  
+**Technology Stack:** React Native, Expo, Node.js, Python Flask, SQLite, Blockchain

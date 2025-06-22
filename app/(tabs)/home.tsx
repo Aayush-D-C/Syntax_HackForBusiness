@@ -207,13 +207,13 @@ const HomeScreen: React.FC = () => {
       return result;
     } catch (error) {
       console.error('Error calculating dynamic credit score:', error);
-      // Fallback to static data
+      // Fallback to static data - don't use currentShopkeeper here to avoid re-renders
       return {
-        credit_score: currentShopkeeper?.credit_score || 75,
-        risk_category: currentShopkeeper?.risk_category || 'Good',
+        credit_score: 75, // Default fallback score
+        risk_category: 'Good', // Default fallback category
       };
     }
-  }, [operations, inventory, currentShopkeeper]);
+  }, [operations, inventory]); // Removed currentShopkeeper dependency
 
   // Calculate inventory statistics
   const inventoryStats = useMemo(() => ({
@@ -262,13 +262,17 @@ const HomeScreen: React.FC = () => {
 
   // Recalculate credit score when operations or inventory changes
   useEffect(() => {
-    calculateDynamicCreditScore();
-  }, [operations, inventory]);
+    // Only calculate if we have data to work with
+    if (operations.length > 0 || inventory.length > 0) {
+      calculateDynamicCreditScore();
+    }
+  }, [operations.length, inventory.length]); // Use length instead of full arrays to prevent infinite loops
 
-  // Initial data load
+  // Initial data load - removed dependency to prevent infinite loops
   useEffect(() => {
-    fetchShopkeepers();
-  }, [fetchShopkeepers]);
+    // Data is already loaded in DataContext, no need to fetch again
+    // This useEffect was causing infinite re-renders
+  }, []); // Empty dependency array
 
   const onRefresh = async () => {
     setRefreshing(true);

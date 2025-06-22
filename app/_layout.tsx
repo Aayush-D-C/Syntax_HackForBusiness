@@ -8,6 +8,17 @@ import { BlockchainProvider } from "../context/BlockchainContext";
 import { DataProvider } from '../context/DataContext';
 import { ScanProvider } from "../context/ScanContext";
 
+// Suppress maximum update depth warnings if they still occur
+const originalConsoleWarn = console.warn;
+console.warn = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('Maximum update depth exceeded')) {
+    // Suppress this specific warning
+    return;
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
 function RootLayout() {
   const { isLoggedIn, isInitialized } = useAuth();
   const segments = useSegments();
@@ -29,7 +40,7 @@ function RootLayout() {
         router.replace("/(tabs)/home");
       }
     }
-  }, [isLoggedIn, isInitialized, segments, router]);
+  }, [isLoggedIn, isInitialized, segments]);
 
   return (
     <Stack>

@@ -484,34 +484,37 @@ const InventoryScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Inventory List */}
-      <FlatList
-        data={filteredAndSortedInventory}
-        keyExtractor={(item) => item.barcode}
-        renderItem={({ item }) => (
-          <InventoryCard
-            item={item}
-            onPress={() => handleEditItem(item)}
-            onEdit={() => handleEditItem(item)}
-            onDelete={() => handleDeleteItem(item)}
-          />
-        )}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="cube-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>No items found</Text>
-            <Text style={styles.emptySubtext}>
-              {searchText || filterBy !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Add your first inventory item to get started'}
-            </Text>
-          </View>
-        }
-      />
+      {/* Inventory List - Fixed scrolling */}
+      <View style={styles.listWrapper}>
+        <FlatList
+          data={filteredAndSortedInventory}
+          keyExtractor={(item) => item.barcode}
+          renderItem={({ item }) => (
+            <InventoryCard
+              item={item}
+              onPress={() => handleEditItem(item)}
+              onEdit={() => handleEditItem(item)}
+              onDelete={() => handleDeleteItem(item)}
+            />
+          )}
+          contentContainerStyle={styles.listContentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          showsVerticalScrollIndicator={true}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="cube-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>No items found</Text>
+              <Text style={styles.emptySubtext}>
+                {searchText || filterBy !== 'all'
+                  ? 'Try adjusting your search or filters'
+                  : 'Add your first inventory item to get started'}
+              </Text>
+            </View>
+          }
+        />
+      </View>
 
       <FilterModal />
       <AddItemModal />
@@ -643,12 +646,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  listContainer: {
+  listWrapper: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+  },
+  listContentContainer: {
     paddingTop: 0,
     paddingBottom: 40,
-    marginTop: 0,
   },
   inventoryCard: {
     backgroundColor: '#fff',
