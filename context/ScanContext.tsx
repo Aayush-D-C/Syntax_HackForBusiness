@@ -7,7 +7,8 @@ interface Product {
   barcode: string;
   name: string;
   category: string;
-  price: number;
+  price: number; // Selling price
+  costPrice: number; // Cost price for profit calculation
   quantity?: number;
   exists: boolean;
 }
@@ -67,7 +68,15 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
       const savedOperations = await AsyncStorage.getItem('inventory_operations');
       
       if (savedInventory) {
-        setInventory(JSON.parse(savedInventory));
+        const parsedInventory = JSON.parse(savedInventory);
+        // Migrate existing inventory to include costPrice if missing
+        const migratedInventory = parsedInventory.map((item: any) => ({
+          ...item,
+          costPrice: item.costPrice || Math.round(item.price * 0.8), // Default to 80% of selling price
+        }));
+        setInventory(migratedInventory);
+        // Save migrated inventory back to storage
+        await AsyncStorage.setItem('inventory', JSON.stringify(migratedInventory));
       } else {
         // Load sample inventory if none exists
         const sampleInventory = [
@@ -76,6 +85,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
             name: 'Rice (Basmati)',
             category: 'Grains',
             price: 120,
+            costPrice: 100,
             quantity: 50,
             exists: true,
           },
@@ -84,6 +94,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
             name: 'Cooking Oil',
             category: 'Oils',
             price: 250,
+            costPrice: 200,
             quantity: 30,
             exists: true,
           },
@@ -92,6 +103,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
             name: 'Sugar (White)',
             category: 'Grains',
             price: 180,
+            costPrice: 150,
             quantity: 40,
             exists: true,
           },
@@ -100,6 +112,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
             name: 'Tea (Black)',
             category: 'Beverages',
             price: 270,
+            costPrice: 220,
             quantity: 25,
             exists: true,
           },
@@ -108,6 +121,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
             name: 'Wheat Flour',
             category: 'Grains',
             price: 95,
+            costPrice: 80,
             quantity: 60,
             exists: true,
           },
@@ -116,6 +130,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
             name: 'Soap (Bathing)',
             category: 'Personal Care',
             price: 60,
+            costPrice: 50,
             quantity: 35,
             exists: true,
           },

@@ -62,8 +62,21 @@ const InventoryCard: React.FC<InventoryCardProps> = ({
           <Text style={styles.detailValue}>{item.quantity || 0}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Price:</Text>
+          <Text style={styles.detailLabel}>Selling Price:</Text>
           <Text style={styles.detailValue}>NPR {item.price?.toLocaleString() || 0}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Cost Price:</Text>
+          <Text style={styles.detailValue}>NPR {item.costPrice?.toLocaleString() || 0}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Profit Margin:</Text>
+          <Text style={[styles.detailValue, { color: '#4CAF50', fontWeight: '600' }]}>
+            {item.price && item.costPrice && item.price > 0 ? 
+              `${(((item.price - item.costPrice) / item.price) * 100).toFixed(1)}%` : 
+              'N/A'
+            }
+          </Text>
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Value:</Text>
@@ -105,6 +118,7 @@ const InventoryScreen: React.FC = () => {
     category: '',
     quantity: '',
     price: '',
+    costPrice: '',
     barcode: '',
   });
 
@@ -166,8 +180,16 @@ const InventoryScreen: React.FC = () => {
   }, [inventory, searchText, filterBy, sortBy]);
 
   const handleAddItem = () => {
-    if (!newItem.name || !newItem.category || !newItem.quantity || !newItem.price || !newItem.barcode) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!newItem.name || !newItem.category || !newItem.quantity || !newItem.price || !newItem.costPrice || !newItem.barcode) {
+      Alert.alert('Error', 'Please fill in all required fields including cost price');
+      return;
+    }
+
+    const priceNum = parseFloat(newItem.price);
+    const costPriceNum = parseFloat(newItem.costPrice);
+    
+    if (costPriceNum >= priceNum) {
+      Alert.alert('Error', 'Cost price should be less than selling price for profit');
       return;
     }
 
@@ -175,12 +197,13 @@ const InventoryScreen: React.FC = () => {
       barcode: newItem.barcode,
       name: newItem.name,
       category: newItem.category,
-      price: parseFloat(newItem.price),
+      price: priceNum,
+      costPrice: costPriceNum,
       exists: true,
     };
 
     addToInventory(product, parseInt(newItem.quantity));
-    setNewItem({ name: '', category: '', quantity: '', price: '', barcode: '' });
+    setNewItem({ name: '', category: '', quantity: '', price: '', costPrice: '', barcode: '' });
     setShowAddModal(false);
     Alert.alert('Success', 'Item added successfully');
   };
@@ -335,6 +358,14 @@ const InventoryScreen: React.FC = () => {
             keyboardType="numeric"
           />
           
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Cost Price (NPR)"
+            value={newItem.costPrice}
+            onChangeText={(text) => setNewItem({ ...newItem, costPrice: text })}
+            keyboardType="numeric"
+          />
+          
           <View style={styles.barcodeContainer}>
             <TextInput
               style={[styles.modalInput, styles.barcodeInput]}
@@ -430,6 +461,19 @@ const InventoryScreen: React.FC = () => {
           <Text style={styles.summaryTitle}>Low Stock</Text>
           <Text style={styles.summaryValue}>
             {inventory.filter(item => (item.quantity || 0) > 0 && (item.quantity || 0) <= 10).length}
+          </Text>
+        </View>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Avg Profit</Text>
+          <Text style={styles.summaryValue}>
+            {(() => {
+              const itemsWithProfit = inventory.filter(item => item.price && item.costPrice && item.price > 0);
+              if (itemsWithProfit.length === 0) return 'N/A';
+              const avgProfit = itemsWithProfit.reduce((sum, item) => 
+                sum + ((item.price - item.costPrice) / item.price * 100), 0
+              ) / itemsWithProfit.length;
+              return `${avgProfit.toFixed(1)}%`;
+            })()}
           </Text>
         </View>
         <View style={styles.summaryCard}>

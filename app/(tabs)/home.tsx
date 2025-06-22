@@ -121,9 +121,21 @@ const HomeScreen: React.FC = () => {
         sum + (op.product.price * op.quantity), 0
       );
       
-      const totalCost = purchaseOperations.reduce((sum, op) => 
-        sum + (op.product.price * op.quantity * 0.7), 0 // Assuming 30% profit margin
+      // Calculate cost from purchase operations, or estimate from sales if no purchases
+      let totalCost = purchaseOperations.reduce((sum, op) => 
+        sum + ((op.product.costPrice || op.product.price * 0.8) * op.quantity), 0
       );
+      
+      // If no purchase operations but we have sales, estimate cost based on profit margin
+      if (purchaseOperations.length === 0 && salesOperations.length > 0) {
+        // Calculate average profit margin from inventory
+        const itemsWithCost = inventory.filter(item => item.costPrice && item.price > 0);
+        const avgProfitMargin = itemsWithCost.length > 0 
+          ? itemsWithCost.reduce((sum, item) => sum + ((item.price - item.costPrice) / item.price), 0) / itemsWithCost.length
+          : 0.2; // Default 20% profit margin
+        
+        totalCost = totalRevenue * (1 - avgProfitMargin);
+      }
       
       const totalProfit = totalRevenue - totalCost;
       
@@ -139,25 +151,31 @@ const HomeScreen: React.FC = () => {
         recentOperations.map(op => new Date(op.timestamp).toDateString())
       ).size;
       
-      // Enhanced calculation considering inventory value
+      // Enhanced calculation considering inventory value and profit margins
       let enhancedTransactions = totalTransactions;
       let enhancedRevenue = totalRevenue;
       let enhancedProfit = totalProfit;
       
       // If no recent operations, use inventory value as baseline
       if (totalTransactions === 0 && inventory.length > 0) {
+        // Calculate average profit margin from inventory
+        const itemsWithCost = inventory.filter(item => item.costPrice && item.price > 0);
+        const avgProfitMargin = itemsWithCost.length > 0 
+          ? itemsWithCost.reduce((sum, item) => sum + ((item.price - item.costPrice) / item.price), 0) / itemsWithCost.length
+          : 0.2; // Default 20% profit margin
+        
         // Estimate transactions based on inventory value
         enhancedTransactions = Math.max(5, Math.floor(inventoryStats.totalValue / 1000));
         enhancedRevenue = inventoryStats.totalValue * 0.3; // Assume 30% of inventory value as monthly revenue
-        enhancedProfit = enhancedRevenue * 0.25; // Assume 25% profit margin
+        enhancedProfit = enhancedRevenue * avgProfitMargin; // Use actual profit margin
       }
       
       // Ensure minimum values for new businesses
       const minTransactions = Math.max(enhancedTransactions, 3);
       const minRevenue = Math.max(enhancedRevenue, inventoryStats.totalValue * 0.1);
-      const minProfit = Math.max(enhancedProfit, minRevenue * 0.2);
+      const minProfit = Math.max(enhancedProfit, minRevenue * 0.15); // Minimum 15% profit margin
       
-      console.log('💰 Revenue:', minRevenue, 'Profit:', minProfit);
+      console.log('💰 Revenue:', minRevenue, 'Profit:', minProfit, 'Profit Margin:', minRevenue > 0 ? ((minProfit / minRevenue) * 100).toFixed(1) + '%' : 'N/A');
       console.log('📊 Transactions:', minTransactions, 'Days Active:', Math.max(uniqueDays, 7));
       
       // Create credit score data

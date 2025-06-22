@@ -55,10 +55,20 @@ class CreditScoreService {
         days_active
       } = data;
 
-      // Calculate derived metrics
+      // Calculate derived metrics with safety checks
       const total_payments = on_time_payments + missed_payments;
       const payment_reliability = total_payments > 0 ? on_time_payments / total_payments : 0;
-      const profit_margin = revenue > 0 ? profit / revenue : 0;
+      
+      // Improved profit margin calculation
+      let profit_margin = 0;
+      if (revenue > 0 && profit >= 0) {
+        profit_margin = profit / revenue;
+      } else if (revenue > 0 && profit < 0) {
+        profit_margin = 0; // Negative profit = 0% margin
+      } else if (revenue === 0 && profit > 0) {
+        profit_margin = 0.2; // Default 20% margin for new businesses
+      }
+      
       const avg_daily_transactions = days_active > 0 ? transactions / days_active : 0;
 
       // Calculate credit score (0-100)
@@ -67,18 +77,45 @@ class CreditScoreService {
       // Payment reliability (30 points)
       score += payment_reliability * 30;
 
-      // Profit margin (25 points)
-      score += Math.min(profit_margin * 100, 25);
+      // Profit margin (25 points) - Enhanced calculation
+      if (profit_margin >= 0.3) {
+        score += 25; // 30%+ profit margin = full points
+      } else if (profit_margin >= 0.2) {
+        score += 20; // 20-30% profit margin
+      } else if (profit_margin >= 0.1) {
+        score += 15; // 10-20% profit margin
+      } else if (profit_margin >= 0.05) {
+        score += 10; // 5-10% profit margin
+      } else if (profit_margin > 0) {
+        score += 5; // 0-5% profit margin
+      }
+      // 0 points for negative profit margin
 
       // Transaction volume (20 points)
-      score += Math.min(transactions / 10, 20);
+      if (transactions >= 20) {
+        score += 20; // 20+ transactions = full points
+      } else if (transactions >= 15) {
+        score += 15;
+      } else if (transactions >= 10) {
+        score += 10;
+      } else if (transactions >= 5) {
+        score += 5;
+      }
 
       // Daily transaction consistency (15 points)
-      score += Math.min(avg_daily_transactions / 5, 15);
+      if (avg_daily_transactions >= 2) {
+        score += 15; // 2+ daily transactions = full points
+      } else if (avg_daily_transactions >= 1) {
+        score += 10;
+      } else if (avg_daily_transactions >= 0.5) {
+        score += 5;
+      }
 
       // Profit trend (10 points)
       if (profit > 0) {
         score += 10;
+      } else if (profit === 0) {
+        score += 5; // Break-even
       }
 
       // Ensure score is between 0 and 100
@@ -133,18 +170,68 @@ class CreditScoreService {
       days_active
     } = data;
 
-    // Calculate derived metrics
+    // Calculate derived metrics with safety checks
     const total_payments = on_time_payments + missed_payments;
     const payment_reliability = total_payments > 0 ? on_time_payments / total_payments : 0;
-    const profit_margin = revenue > 0 ? profit / revenue : 0;
+    
+    // Improved profit margin calculation
+    let profit_margin = 0;
+    if (revenue > 0 && profit >= 0) {
+      profit_margin = profit / revenue;
+    } else if (revenue > 0 && profit < 0) {
+      profit_margin = 0; // Negative profit = 0% margin
+    } else if (revenue === 0 && profit > 0) {
+      profit_margin = 0.2; // Default 20% margin for new businesses
+    }
+    
     const avg_daily_transactions = days_active > 0 ? transactions / days_active : 0;
 
-    // Calculate individual scores
+    // Calculate individual scores using the same logic as main calculation
     const payment_reliability_score = payment_reliability * 30;
-    const profit_margin_score = Math.min(profit_margin * 100, 25);
-    const transaction_volume_score = Math.min(transactions / 10, 20);
-    const daily_consistency_score = Math.min(avg_daily_transactions / 5, 15);
-    const profit_trend_score = profit > 0 ? 10 : 0;
+    
+    // Profit margin score (25 points) - Enhanced calculation
+    let profit_margin_score = 0;
+    if (profit_margin >= 0.3) {
+      profit_margin_score = 25; // 30%+ profit margin = full points
+    } else if (profit_margin >= 0.2) {
+      profit_margin_score = 20; // 20-30% profit margin
+    } else if (profit_margin >= 0.1) {
+      profit_margin_score = 15; // 10-20% profit margin
+    } else if (profit_margin >= 0.05) {
+      profit_margin_score = 10; // 5-10% profit margin
+    } else if (profit_margin > 0) {
+      profit_margin_score = 5; // 0-5% profit margin
+    }
+    
+    // Transaction volume score (20 points)
+    let transaction_volume_score = 0;
+    if (transactions >= 20) {
+      transaction_volume_score = 20; // 20+ transactions = full points
+    } else if (transactions >= 15) {
+      transaction_volume_score = 15;
+    } else if (transactions >= 10) {
+      transaction_volume_score = 10;
+    } else if (transactions >= 5) {
+      transaction_volume_score = 5;
+    }
+    
+    // Daily consistency score (15 points)
+    let daily_consistency_score = 0;
+    if (avg_daily_transactions >= 2) {
+      daily_consistency_score = 15; // 2+ daily transactions = full points
+    } else if (avg_daily_transactions >= 1) {
+      daily_consistency_score = 10;
+    } else if (avg_daily_transactions >= 0.5) {
+      daily_consistency_score = 5;
+    }
+    
+    // Profit trend score (10 points)
+    let profit_trend_score = 0;
+    if (profit > 0) {
+      profit_trend_score = 10;
+    } else if (profit === 0) {
+      profit_trend_score = 5; // Break-even
+    }
 
     const total_score = Math.max(0, Math.min(100, Math.round(
       payment_reliability_score + profit_margin_score + transaction_volume_score + 

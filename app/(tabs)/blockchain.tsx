@@ -201,74 +201,6 @@ const BlockchainScreen: React.FC = () => {
     }
   };
 
-  const handleAddSampleSale = async () => {
-    try {
-      // Create a new block with sample sale data
-      const newBlockIndex = blockchainData ? blockchainData.chain.length : 1;
-      const newBlock: BlockData = {
-        index: newBlockIndex,
-        hash: `000${newBlockIndex}mnop...`,
-        previousHash: blockchainData ? blockchainData.chain[blockchainData.chain.length - 1].hash : '0000abcd...',
-        nonce: Math.floor(Math.random() * 10000),
-        timestamp: new Date().toISOString(),
-        transaction: {
-          txid: `tx-${String(newBlockIndex).padStart(3, '0')}`,
-          storeId: currentShopkeeper?.name || 'Ram Kumar',
-          total: Math.floor(Math.random() * 500) + 200, // Random amount between 200-700
-          timestamp: new Date().toISOString(),
-          products: [
-            { 
-              barcode: Math.random().toString().slice(2, 15), 
-              name: ['Rice', 'Oil', 'Sugar', 'Tea', 'Flour', 'Milk'][Math.floor(Math.random() * 6)], 
-              price: Math.floor(Math.random() * 300) + 100, 
-              category: ['Grains', 'Oils', 'Beverages', 'Dairy'][Math.floor(Math.random() * 4)] 
-            },
-            { 
-              barcode: Math.random().toString().slice(2, 15), 
-              name: ['Bread', 'Eggs', 'Vegetables', 'Fruits', 'Meat', 'Fish'][Math.floor(Math.random() * 6)], 
-              price: Math.floor(Math.random() * 400) + 150, 
-              category: ['Bakery', 'Proteins', 'Produce', 'Seafood'][Math.floor(Math.random() * 4)] 
-            }
-          ]
-        }
-      };
-
-      // Update the blockchain data with the new block
-      if (blockchainData) {
-        const updatedChain = [...blockchainData.chain, newBlock];
-        const newTotalSales = blockchainData.summary.totalSales + newBlock.transaction.products.length;
-        const newTotalRevenue = blockchainData.summary.totalRevenue + newBlock.transaction.total;
-        const newTransactions = blockchainData.summary.transactions + 1;
-
-        const updatedBlockchainData = {
-          ...blockchainData,
-          chain: updatedChain,
-          totalBlocks: updatedChain.length,
-          summary: {
-            ...blockchainData.summary,
-            totalSales: newTotalSales,
-            totalRevenue: newTotalRevenue,
-            transactions: newTransactions,
-            storeSales: {
-              ...blockchainData.summary.storeSales,
-              [newBlock.transaction.storeId]: {
-                salesCount: (blockchainData.summary.storeSales[newBlock.transaction.storeId as keyof typeof blockchainData.summary.storeSales]?.salesCount || 0) + newBlock.transaction.products.length,
-                revenue: (blockchainData.summary.storeSales[newBlock.transaction.storeId as keyof typeof blockchainData.summary.storeSales]?.revenue || 0) + newBlock.transaction.total
-              }
-            }
-          }
-        };
-
-        // Note: This would need to be integrated with the BlockchainContext
-        // For now, we'll just show an alert
-        Alert.alert('Success', `New sale added to blockchain!\nBlock #${newBlockIndex}\nTotal: NPR ${newBlock.transaction.total.toLocaleString()}`);
-      }
-    } catch (error) {
-      console.error('Error adding sale:', error);
-      Alert.alert('Error', 'Failed to add sale to blockchain');
-    }
-  };
-
   if (!blockchainData) {
     return (
       <View style={styles.loadingContainer}>
@@ -338,16 +270,11 @@ const BlockchainScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Action Buttons */}
+      {/* Action Button */}
       <View style={styles.actionContainer}>
         <TouchableOpacity style={styles.actionButton} onPress={handleVerifyChain}>
           <Ionicons name="shield-checkmark" size={20} color="#fff" />
           <Text style={styles.actionButtonText}>Verify Chain</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton} onPress={handleAddSampleSale}>
-          <Ionicons name="add-circle" size={20} color="#fff" />
-          <Text style={styles.actionButtonText}>Add Sample Sale</Text>
         </TouchableOpacity>
       </View>
 
@@ -371,7 +298,7 @@ const BlockchainScreen: React.FC = () => {
               <Ionicons name="cube-outline" size={64} color="#ccc" />
               <Text style={styles.emptyText}>No blocks found</Text>
               <Text style={styles.emptySubtext}>
-                Add a sale to start building the blockchain
+                Sales will be automatically added to the blockchain
               </Text>
             </View>
           }

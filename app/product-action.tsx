@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useScan } from '../context/ScanContext';
 
@@ -33,6 +33,7 @@ export default function ProductActionScreen() {
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
   const [productPrice, setProductPrice] = useState('');
+  const [productCostPrice, setProductCostPrice] = useState('');
 
   useEffect(() => {
     if (scanData) {
@@ -44,6 +45,7 @@ export default function ProductActionScreen() {
         setProductName(existingProduct.name);
         setProductCategory(existingProduct.category);
         setProductPrice(existingProduct.price.toString());
+        setProductCostPrice((existingProduct.costPrice || 0).toString());
       } else {
         // New product - create placeholder
         const newProduct = {
@@ -51,6 +53,7 @@ export default function ProductActionScreen() {
           name: '',
           category: '',
           price: 0,
+          costPrice: 0,
           exists: false,
         };
         setScannedProduct(newProduct);
@@ -59,8 +62,8 @@ export default function ProductActionScreen() {
   }, [scanData, getProductByBarcode, setScannedProduct]);
 
   const handleAddToInventory = () => {
-    if (!productName.trim() || !productCategory.trim() || !productPrice.trim()) {
-      Alert.alert('Error', 'Please fill in all product details');
+    if (!productName.trim() || !productCategory.trim() || !productPrice.trim() || !productCostPrice.trim()) {
+      Alert.alert('Error', 'Please fill in all product details including cost price');
       return;
     }
 
@@ -72,7 +75,18 @@ export default function ProductActionScreen() {
 
     const priceNum = parseFloat(productPrice);
     if (isNaN(priceNum) || priceNum < 0) {
-      Alert.alert('Error', 'Please enter a valid price');
+      Alert.alert('Error', 'Please enter a valid selling price');
+      return;
+    }
+
+    const costPriceNum = parseFloat(productCostPrice);
+    if (isNaN(costPriceNum) || costPriceNum < 0) {
+      Alert.alert('Error', 'Please enter a valid cost price');
+      return;
+    }
+
+    if (costPriceNum >= priceNum) {
+      Alert.alert('Error', 'Cost price should be less than selling price for profit');
       return;
     }
 
@@ -81,6 +95,7 @@ export default function ProductActionScreen() {
       name: productName.trim(),
       category: productCategory.trim(),
       price: priceNum,
+      costPrice: costPriceNum,
       exists: true,
     };
 
@@ -238,6 +253,18 @@ export default function ProductActionScreen() {
               value={productPrice}
               onChangeText={setProductPrice}
               placeholder="Enter price"
+              keyboardType="numeric"
+              editable={isAddingItem || !scannedProduct.exists}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Cost Price (NPR) *</Text>
+            <TextInput
+              style={styles.input}
+              value={productCostPrice}
+              onChangeText={setProductCostPrice}
+              placeholder="Enter cost price"
               keyboardType="numeric"
               editable={isAddingItem || !scannedProduct.exists}
             />

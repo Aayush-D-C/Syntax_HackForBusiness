@@ -160,28 +160,47 @@ export default function CreditAnalysisScreen() {
         sum + (op.product.price * op.quantity), 0
       );
       
-      const totalCost = purchaseOperations.reduce((sum, op) => 
-        sum + (op.product.price * op.quantity * 0.7), 0
+      // Calculate cost from purchase operations, or estimate from sales if no purchases
+      let totalCost = purchaseOperations.reduce((sum, op) => 
+        sum + ((op.product.costPrice || op.product.price * 0.8) * op.quantity), 0
       );
+      
+      // If no purchase operations but we have sales, estimate cost based on profit margin
+      if (purchaseOperations.length === 0 && salesOperations.length > 0) {
+        // Calculate average profit margin from inventory
+        const itemsWithCost = inventory.filter(item => item.costPrice && item.price > 0);
+        const avgProfitMargin = itemsWithCost.length > 0 
+          ? itemsWithCost.reduce((sum, item) => sum + ((item.price - item.costPrice) / item.price), 0) / itemsWithCost.length
+          : 0.2; // Default 20% profit margin
+        
+        totalCost = totalRevenue * (1 - avgProfitMargin);
+      }
       
       const totalProfit = totalRevenue - totalCost;
       
-      // Enhanced calculation considering inventory value
+      // Enhanced calculation considering inventory value and profit margins
       let enhancedTransactions = totalTransactions;
       let enhancedRevenue = totalRevenue;
       let enhancedProfit = totalProfit;
       
       // If no recent operations, use inventory value as baseline
       if (totalTransactions === 0 && inventory.length > 0) {
+        // Calculate average profit margin from inventory
+        const itemsWithCost = inventory.filter(item => item.costPrice && item.price > 0);
+        const avgProfitMargin = itemsWithCost.length > 0 
+          ? itemsWithCost.reduce((sum, item) => sum + ((item.price - item.costPrice) / item.price), 0) / itemsWithCost.length
+          : 0.2; // Default 20% profit margin
+        
+        // Estimate transactions based on inventory value
         enhancedTransactions = Math.max(5, Math.floor(inventoryStats.totalValue / 1000));
-        enhancedRevenue = inventoryStats.totalValue * 0.3;
-        enhancedProfit = enhancedRevenue * 0.25;
+        enhancedRevenue = inventoryStats.totalValue * 0.3; // Assume 30% of inventory value as monthly revenue
+        enhancedProfit = enhancedRevenue * avgProfitMargin; // Use actual profit margin
       }
       
       // Ensure minimum values for new businesses
       const minTransactions = Math.max(enhancedTransactions, 3);
       const minRevenue = Math.max(enhancedRevenue, inventoryStats.totalValue * 0.1);
-      const minProfit = Math.max(enhancedProfit, minRevenue * 0.2);
+      const minProfit = Math.max(enhancedProfit, minRevenue * 0.15); // Minimum 15% profit margin
       
       // Calculate days active
       const uniqueDays = new Set(
@@ -231,21 +250,93 @@ export default function CreditAnalysisScreen() {
   }, [error, clearError]);
 
   const getCreditScoreData = () => {
-    // Use dynamic data if available, otherwise fallback to mock data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const currentScore = dynamicCreditData?.credit_score || currentShopkeeper?.credit_score || 75;
-    const scores = [65, 68, 72, 75, 78, currentScore];
+    // Generate weekly credit score trend based on daily operations
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const today = new Date();
+    const weeklyScores = [];
+    
+    // Calculate credit score for each day of the past week
+    for (let i = 6; i >= 0; i--) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() - i);
+      const targetDateString = targetDate.toDateString();
+      
+      // Get operations for this specific day
+      const dayOperations = operations.filter(op => 
+        new Date(op.timestamp).toDateString() === targetDateString
+      );
+      
+      // Calculate daily credit score
+      const dailyScore = calculateDailyCreditScore(dayOperations, targetDate);
+      weeklyScores.push(dailyScore);
+    }
     
     return {
-      labels: months,
+      labels: days,
       datasets: [
         {
-          data: scores,
-          color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
-          strokeWidth: 3,
+          data: weeklyScores,
+          color: (opacity = 1) => `rgba(147, 51, 234, ${opacity})`, // Modern purple
+          strokeWidth: 4,
+          strokeCap: 'round',
+          strokeJoin: 'round',
         }
       ],
     };
+  };
+
+  // Calculate credit score for a specific day
+  const calculateDailyCreditScore = (dayOperations: any[], targetDate: Date) => {
+    try {
+      if (dayOperations.length === 0) {
+        // If no operations for this day, use baseline score
+        return 65; // Baseline score for inactive days
+      }
+
+      // Calculate daily metrics
+      const salesOperations = dayOperations.filter(op => op.type === 'remove');
+      const purchaseOperations = dayOperations.filter(op => op.type === 'add');
+      
+      const dailyRevenue = salesOperations.reduce((sum, op) => 
+        sum + (op.product.price * op.quantity), 0
+      );
+      
+      let dailyCost = purchaseOperations.reduce((sum, op) => 
+        sum + ((op.product.costPrice || op.product.price * 0.8) * op.quantity), 0
+      );
+      
+      // If no purchases but sales, estimate cost
+      if (purchaseOperations.length === 0 && salesOperations.length > 0) {
+        const itemsWithCost = inventory.filter(item => item.costPrice && item.price > 0);
+        const avgProfitMargin = itemsWithCost.length > 0 
+          ? itemsWithCost.reduce((sum, item) => sum + ((item.price - item.costPrice) / item.price), 0) / itemsWithCost.length
+          : 0.2;
+        dailyCost = dailyRevenue * (1 - avgProfitMargin);
+      }
+      
+      const dailyProfit = dailyRevenue - dailyCost;
+      const dailyTransactions = dayOperations.length;
+      
+      // Create daily credit score data
+      const dailyCreditData: CreditScoreData = {
+        transactions: Math.max(dailyTransactions, 1),
+        on_time_payments: Math.floor(dailyTransactions * 0.9),
+        missed_payments: Math.floor(dailyTransactions * 0.1),
+        avg_transaction_amount: dailyTransactions > 0 ? dailyRevenue / dailyTransactions : 0,
+        profit: Math.max(dailyProfit, 0),
+        revenue: dailyRevenue,
+        expenses: dailyCost,
+        days_active: 1, // Single day
+      };
+
+      // Calculate daily credit score
+      const result = creditScoreService.calculateCreditScoreSimple(dailyCreditData);
+      return result.credit_score;
+      
+    } catch (error) {
+      console.error('Error calculating daily credit score:', error);
+      return 65; // Fallback score
+    }
   };
 
   const getPerformanceData = () => {
@@ -619,15 +710,88 @@ export default function CreditAnalysisScreen() {
       {/* Credit Score Trend */}
       {getCreditScoreData() && (
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Credit Score Trend (6 Months)</Text>
+          <Text style={styles.chartTitle}>Weekly Credit Score Trend</Text>
           <LineChart
             data={getCreditScoreData()}
             width={chartWidth}
             height={220}
-            chartConfig={chartConfig}
+            chartConfig={{
+              backgroundColor: '#ffffff',
+              backgroundGradientFrom: '#ffffff',
+              backgroundGradientTo: '#ffffff',
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(138, 43, 226, ${opacity})`, // Purple gradient
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              style: {
+                borderRadius: 16,
+              },
+              propsForDots: {
+                r: '8',
+                strokeWidth: '3',
+                stroke: '#8A2BE2',
+                fill: '#ffffff',
+              },
+              propsForBackgroundLines: {
+                strokeDasharray: '', // Solid lines
+                stroke: '#f0f0f0',
+                strokeWidth: 1,
+              },
+            }}
             bezier
             style={styles.chart}
+            withDots={true}
+            withShadow={false}
+            withInnerLines={true}
+            withOuterLines={false}
+            withVerticalLines={false}
+            withHorizontalLines={true}
+            withVerticalLabels={true}
+            withHorizontalLabels={true}
+            fromZero={false}
+            yAxisSuffix=""
+            yAxisInterval={1}
+            segments={4}
           />
+          
+          {/* Weekly Analysis */}
+          <View style={styles.trendAnalysis}>
+            <Text style={styles.trendTitle}>Weekly Analysis</Text>
+            <View style={styles.trendStats}>
+              <View style={styles.trendStat}>
+                <Text style={styles.trendLabel}>Best Day</Text>
+                <Text style={styles.trendValue}>
+                  {(() => {
+                    const scores = getCreditScoreData().datasets[0].data;
+                    const maxScore = Math.max(...scores);
+                    const bestDayIndex = scores.indexOf(maxScore);
+                    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    return `${days[bestDayIndex]} (${maxScore})`;
+                  })()}
+                </Text>
+              </View>
+              <View style={styles.trendStat}>
+                <Text style={styles.trendLabel}>Average</Text>
+                <Text style={styles.trendValue}>
+                  {(() => {
+                    const scores = getCreditScoreData().datasets[0].data;
+                    const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+                    return Math.round(avg);
+                  })()}
+                </Text>
+              </View>
+              <View style={styles.trendStat}>
+                <Text style={styles.trendLabel}>Trend</Text>
+                <Text style={[styles.trendValue, { color: '#4CAF50' }]}>
+                  {(() => {
+                    const scores = getCreditScoreData().datasets[0].data;
+                    const firstHalf = scores.slice(0, 3).reduce((sum, score) => sum + score, 0) / 3;
+                    const secondHalf = scores.slice(4).reduce((sum, score) => sum + score, 0) / 3;
+                    return secondHalf > firstHalf ? '↗️ Improving' : '↘️ Declining';
+                  })()}
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
       )}
 
@@ -909,25 +1073,31 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   chartContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     margin: 20,
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
     marginBottom: 16,
     textAlign: 'center',
   },
   chart: {
-    borderRadius: 12,
+    marginVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'transparent',
+  },
+  chartGradient: {
+    borderRadius: 16,
+    padding: 16,
   },
   analysisContainer: {
     padding: 20,
@@ -1039,5 +1209,47 @@ const styles = StyleSheet.create({
   breakdownScore: {
     fontSize: 12,
     color: '#666',
+  },
+  trendAnalysis: {
+    marginTop: 16,
+    padding: 20,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  trendTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  trendStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  trendStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  trendLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  trendValue: {
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '700',
   },
 });
