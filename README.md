@@ -78,9 +78,9 @@ A comprehensive React Native Expo application with Node.js backend and Python AI
 ### 1. Install Dependencies
 
 #### Frontend (React Native)
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
 #### Backend (Node.js)
 ```bash
@@ -111,9 +111,9 @@ npm start
 **Expected Output:** `Server running on port 3001`
 
 #### Terminal 3: React Native App
-```bash
-npx expo start
-```
+   ```bash
+   npx expo start
+   ```
 **Expected Output:** Expo development server starts
 
 ### 3. Access the Application

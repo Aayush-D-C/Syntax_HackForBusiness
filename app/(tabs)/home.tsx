@@ -18,9 +18,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useScan } from '../../context/ScanContext';
 import { apiService } from '../../services/apiService';
+import { CreditScoreData, creditScoreService } from '../../services/creditScoreService';
 
-const { width } = Dimensions.get('window');
-const chartWidth = width - 40;
+const { width: screenWidth } = Dimensions.get('window');
+const chartWidth = screenWidth - 40;
 
 interface StatCardProps {
   title: string;
@@ -72,17 +73,126 @@ const HomeScreen: React.FC = () => {
     dashboardStats, 
     error, 
     refreshData,
-    clearError 
+    clearError,
+    fetchShopkeepers
   } = useData();
   const { inventory, operations } = useScan();
   const { logout } = useAuth();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [dynamicCreditScore, setDynamicCreditScore] = useState<{
+    credit_score: number;
+    risk_category: string;
+  } | null>(null);
   const [aiPredictions, setAiPredictions] = useState<{
     nextMonthProfit?: number;
     nextMonthRevenue?: number;
     growthProbability?: number;
   }>({});
+
+  // Calculate dynamic credit score based on inventory operations
+  const calculateDynamicCreditScore = () => {
+    try {
+      // Calculate business metrics from inventory operations
+      const today = new Date().toDateString();
+      const todayOperations = operations.filter(op => 
+        new Date(op.timestamp).toDateString() === today
+      );
+      
+      const last30Days = new Date();
+      last30Days.setDate(last30Days.getDate() - 30);
+      const recentOperations = operations.filter(op => 
+        new Date(op.timestamp) >= last30Days
+      );
+
+      console.log('📊 Calculating dynamic credit score...');
+      console.log('📈 Recent operations:', recentOperations.length);
+      console.log('📅 Today operations:', todayOperations.length);
+      console.log('📦 Inventory items:', inventory.length);
+      console.log('💰 Inventory value:', inventoryStats.totalValue);
+
+      // Calculate metrics
+      const totalTransactions = recentOperations.length;
+      const salesOperations = recentOperations.filter(op => op.type === 'remove');
+      const purchaseOperations = recentOperations.filter(op => op.type === 'add');
+      
+      // Calculate revenue and profit from operations
+      const totalRevenue = salesOperations.reduce((sum, op) => 
+        sum + (op.product.price * op.quantity), 0
+      );
+      
+      const totalCost = purchaseOperations.reduce((sum, op) => 
+        sum + (op.product.price * op.quantity * 0.7), 0 // Assuming 30% profit margin
+      );
+      
+      const totalProfit = totalRevenue - totalCost;
+      
+      // Calculate payment reliability (simulated based on operations)
+      const onTimePayments = Math.floor(totalTransactions * 0.9); // 90% on-time
+      const missedPayments = totalTransactions - onTimePayments;
+      
+      // Calculate average transaction amount
+      const avgTransactionAmount = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+      
+      // Calculate days active (based on unique days with operations)
+      const uniqueDays = new Set(
+        recentOperations.map(op => new Date(op.timestamp).toDateString())
+      ).size;
+      
+      // Enhanced calculation considering inventory value
+      let enhancedTransactions = totalTransactions;
+      let enhancedRevenue = totalRevenue;
+      let enhancedProfit = totalProfit;
+      
+      // If no recent operations, use inventory value as baseline
+      if (totalTransactions === 0 && inventory.length > 0) {
+        // Estimate transactions based on inventory value
+        enhancedTransactions = Math.max(5, Math.floor(inventoryStats.totalValue / 1000));
+        enhancedRevenue = inventoryStats.totalValue * 0.3; // Assume 30% of inventory value as monthly revenue
+        enhancedProfit = enhancedRevenue * 0.25; // Assume 25% profit margin
+      }
+      
+      // Ensure minimum values for new businesses
+      const minTransactions = Math.max(enhancedTransactions, 3);
+      const minRevenue = Math.max(enhancedRevenue, inventoryStats.totalValue * 0.1);
+      const minProfit = Math.max(enhancedProfit, minRevenue * 0.2);
+      
+      console.log('💰 Revenue:', minRevenue, 'Profit:', minProfit);
+      console.log('📊 Transactions:', minTransactions, 'Days Active:', Math.max(uniqueDays, 7));
+      
+      // Create credit score data
+      const creditScoreData: CreditScoreData = {
+        transactions: minTransactions,
+        on_time_payments: Math.floor(minTransactions * 0.9),
+        missed_payments: Math.floor(minTransactions * 0.1),
+        avg_transaction_amount: minRevenue / minTransactions,
+        profit: minProfit,
+        revenue: minRevenue,
+        expenses: minRevenue - minProfit,
+        days_active: Math.max(uniqueDays, 7), // Minimum 7 days for new businesses
+      };
+
+      // Calculate credit score
+      const result = creditScoreService.calculateCreditScoreSimple(creditScoreData);
+      
+      console.log('🎯 Dynamic Credit Score:', result.credit_score, result.risk_category);
+      console.log('📋 Score Breakdown:', creditScoreService.getCreditScoreBreakdown(creditScoreData));
+      
+      setDynamicCreditScore({
+        credit_score: result.credit_score,
+        risk_category: result.risk_category,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Error calculating dynamic credit score:', error);
+      // Fallback to static data
+      return {
+        credit_score: currentShopkeeper?.credit_score || 75,
+        risk_category: currentShopkeeper?.risk_category || 'Good',
+      };
+    }
+  };
 
   // Calculate inventory statistics
   const inventoryStats = {
@@ -129,19 +239,24 @@ const HomeScreen: React.FC = () => {
     fetchAiPredictions();
   }, [currentShopkeeper?.shopkeeper_id]);
 
+  // Recalculate credit score when operations or inventory changes
+  useEffect(() => {
+    calculateDynamicCreditScore();
+  }, [operations, inventory]); // Recalculate when operations or inventory changes
+
+  // Initial data load
+  useEffect(() => {
+    fetchShopkeepers();
+    calculateDynamicCreditScore();
+  }, []); // Only run once on mount
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refreshData();
-      // Also refresh AI predictions
-      if (currentShopkeeper?.shopkeeper_id) {
-        const prediction = await apiService.predictBusinessPerformance(currentShopkeeper.shopkeeper_id);
-        setAiPredictions({
-          nextMonthProfit: prediction.next_month_profit,
-          nextMonthRevenue: prediction.next_month_revenue,
-          growthProbability: prediction.growth_probability
-        });
-      }
+      await fetchShopkeepers();
+      calculateDynamicCreditScore();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
     } finally {
       setRefreshing(false);
     }
@@ -190,7 +305,7 @@ const HomeScreen: React.FC = () => {
     const labels = trends.map(trend => trend.month);
     const profitData = trends.map(trend => trend.total_profit / 1000);
     const revenueData = trends.map(trend => trend.total_revenue / 1000);
-  
+
     return {
       labels,
       datasets: [
@@ -208,7 +323,7 @@ const HomeScreen: React.FC = () => {
       legend: ['Profit (K)', 'Revenue (K)']
     };
   };
-  
+
 
   
 
@@ -227,7 +342,7 @@ const HomeScreen: React.FC = () => {
       stroke: "#ffa726"
     }
   };
-  
+
   return (
     <ScrollView 
       style={styles.container}
@@ -256,10 +371,10 @@ const HomeScreen: React.FC = () => {
         <View style={styles.statsRow}>
           <StatCard
             title="My Credit Score"
-            value={currentShopkeeper?.credit_score || 0}
+            value={dynamicCreditScore?.credit_score || currentShopkeeper?.credit_score || 0}
             icon="star"
-            color="#4CAF50"
-            subtitle={currentShopkeeper?.risk_category || 'Calculating...'}
+            color={dynamicCreditScore ? getRiskColor(dynamicCreditScore.risk_category) : "#4CAF50"}
+            subtitle={`${dynamicCreditScore?.risk_category || currentShopkeeper?.risk_category || 'Calculating...'}${dynamicCreditScore ? ' (Live)' : ' (Static)'}`}
             onPress={() => router.push('/predict')}
           />
           <StatCard
@@ -308,7 +423,7 @@ const HomeScreen: React.FC = () => {
               color="#FF5722"
               subtitle="AI forecast"
             />
-          </View>
+      </View>
         )}
 
         {/* Low Stock Alert */}
@@ -330,45 +445,45 @@ const HomeScreen: React.FC = () => {
         )}
       </View>
 
-      <View style={styles.chartContainer}>
+        <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>My Monthly Trends (in thousands NPR)</Text>
-        <LineChart
+          <LineChart
           data={getMonthlyTrendsData()}
-          width={chartWidth}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
-      </View>
+            width={chartWidth}
+            height={220}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+          />
+          </View>
 
       {/* Quick Actions */}
       <View style={styles.actionsContainer}>
         <Text style={styles.actionsTitle}>Quick Actions</Text>
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={styles.actionButton}
+        <TouchableOpacity 
+          style={styles.actionButton}
             onPress={() => router.push('/(tabs)/scanner')}
-          >
+        >
             <Ionicons name="barcode" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Scan Products</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.actionButton}
             onPress={() => router.push('/(tabs)/stocks')}
-          >
+        >
             <Ionicons name="cube" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>View Inventory</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.actionButton}
             onPress={() => router.push('/(tabs)/history')}
-          >
-            <Ionicons name="time" size={24} color="#fff" />
+        >
+          <Ionicons name="time" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>History</Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
