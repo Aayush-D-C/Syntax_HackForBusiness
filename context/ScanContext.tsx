@@ -1,6 +1,6 @@
 // context/ScanContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useBlockchain } from './BlockchainContext';
 
 interface Product {
@@ -62,7 +62,7 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
     loadInventory();
   }, []);
 
-  const loadInventory = async () => {
+  const loadInventory = useCallback(async () => {
     try {
       const savedInventory = await AsyncStorage.getItem('inventory');
       const savedOperations = await AsyncStorage.getItem('inventory_operations');
@@ -145,27 +145,27 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error loading inventory:', error);
     }
-  };
+  }, []);
 
-  const saveInventory = async () => {
+  const saveInventory = useCallback(async () => {
     try {
       await AsyncStorage.setItem('inventory', JSON.stringify(inventory));
       await AsyncStorage.setItem('inventory_operations', JSON.stringify(operations));
     } catch (error) {
       console.error('Error saving inventory:', error);
     }
-  };
+  }, [inventory, operations]);
 
-  const clearScanData = () => {
+  const clearScanData = useCallback(() => {
     setScanData('');
     setScannedProduct(null);
-  };
+  }, []);
 
-  const getProductByBarcode = (barcode: string): Product | undefined => {
+  const getProductByBarcode = useCallback((barcode: string): Product | undefined => {
     return inventory.find(item => item.barcode === barcode);
-  };
+  }, [inventory]);
 
-  const addToInventory = (product: Product, quantity: number) => {
+  const addToInventory = useCallback((product: Product, quantity: number) => {
     setInventory(prev => {
       const existingIndex = prev.findIndex(item => item.barcode === product.barcode);
       
@@ -185,9 +185,9 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
     
     // Save to AsyncStorage
     setTimeout(() => saveInventory(), 100);
-  };
+  }, [saveInventory]);
 
-  const removeFromInventory = (barcode: string, quantity: number) => {
+  const removeFromInventory = useCallback((barcode: string, quantity: number) => {
     // Get product before updating state to avoid stale closure
     const product = getProductByBarcode(barcode);
     
@@ -221,9 +221,9 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
     
     // Save to AsyncStorage
     setTimeout(() => saveInventory(), 100);
-  };
+  }, [getProductByBarcode, saveInventory]);
 
-  const recordSaleOnBlockchain = async (product: Product, quantity: number) => {
+  const recordSaleOnBlockchain = useCallback(async (product: Product, quantity: number) => {
     try {
       // Create sale data for blockchain
       const saleData = {
@@ -253,16 +253,16 @@ export const ScanProvider: React.FC<ScanProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error recording sale for blockchain:', error);
     }
-  };
+  }, [addSaleToBlockchain]);
 
-  const addOperation = (operation: InventoryOperation) => {
+  const addOperation = useCallback((operation: InventoryOperation) => {
     setOperations(prev => {
       const newOperations = [operation, ...prev.slice(0, 99)]; // Keep last 100 operations
       // Save to AsyncStorage
       setTimeout(() => AsyncStorage.setItem('inventory_operations', JSON.stringify(newOperations)), 100);
       return newOperations;
     });
-  };
+  }, []);
 
   return (
     <ScanContext.Provider value={{ 

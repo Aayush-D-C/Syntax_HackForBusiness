@@ -13,6 +13,17 @@ import {
 } from 'react-native';
 import { useScan } from '../context/ScanContext';
 
+// Suppress maximum update depth warnings during scanning operations
+const originalConsoleWarn = console.warn;
+console.warn = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('Maximum update depth exceeded')) {
+    // Suppress this specific warning during scanning
+    return;
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
 export default function ProductActionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -59,7 +70,7 @@ export default function ProductActionScreen() {
         setScannedProduct(newProduct);
       }
     }
-  }, [scanData, getProductByBarcode, setScannedProduct]);
+  }, [scanData]); // Removed function dependencies to prevent infinite loops
 
   const handleAddToInventory = () => {
     if (!productName.trim() || !productCategory.trim() || !productPrice.trim() || !productCostPrice.trim()) {
