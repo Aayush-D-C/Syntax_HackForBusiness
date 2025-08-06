@@ -1,5 +1,11 @@
 # BizSathi - Shopkeeper Business Management System
 
+<img width="500" height="500" alt="Biz Saathi (1)" src="https://github.com/user-attachments/assets/0dea91a7-98ca-480f-a904-dfe3a622a035" />
+
+
+<img width="500" height="500" alt="Biz Saathi" src="https://github.com/user-attachments/assets/4698842a-0729-4ca3-aac0-18849ac5a851" />
+
+
 A comprehensive React Native Expo application with Node.js backend and Python AI services for shopkeeper business management, featuring credit scoring, inventory management, blockchain sales records, and predictive analytics.
 
 ## 🏗️ System Architecture
@@ -18,6 +24,11 @@ A comprehensive React Native Expo application with Node.js backend and Python AI
 │   Scanner       │    │   Database      │    │   Model         │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
+
+
+
+
+
 
 ## 📱 Features
 
